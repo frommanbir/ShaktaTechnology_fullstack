@@ -22,7 +22,7 @@ export default function ServicesPage() {
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const res = await getServices(); // returns { success, data }
+        const res = await getServices();
         if (res.success) {
           setServices(res.data);
         } else {
@@ -62,7 +62,7 @@ export default function ServicesPage() {
       {/* Header */}
       <section className="text-center py-20">
         <h2 className="text-4xl sm:text-5xl font-extrabold">
-          Our <span className="text-indigo-500">Services</span>
+          Our <span className="text-indigo-600">Services</span>
         </h2>
         <p className="mt-4 text-slate-600 max-w-2xl mx-auto">
           Comprehensive software development services designed to accelerate
@@ -111,10 +111,11 @@ export default function ServicesPage() {
                 </>
               )}
             </div>
-
-            <button className="mt-auto flex items-center justify-center gap-2 bg-indigo-500 text-white font-medium py-2 rounded-xl hover:bg-indigo-600 transition">
+            <Link href = "/contact" passHref> 
+            <button className=" w-full mt-auto flex items-center justify-center gap-2 bg-indigo-500 text-white font-medium py-2 rounded-xl hover:bg-indigo-600 transition">
               Get Started <ArrowRight size={16} />
             </button>
+            </Link>
           </div>
         ))}
       </section>

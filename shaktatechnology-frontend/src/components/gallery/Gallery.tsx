@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { getGalleries } from "@/lib/api";
 import Image from "next/image";
-import { Loader2 } from "lucide-react";
+import { Loader2, X } from "lucide-react";
 
 interface Gallery {
   id: number;
@@ -15,9 +15,13 @@ interface Gallery {
 export default function GalleryPage() {
   const [galleries, setGalleries] = useState<Gallery[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   // Centralized storage URL
-  const storageUrl = process.env.NEXT_PUBLIC_STORAGE_URL || process.env.NEXT_PUBLIC_API_URL || "";
+  const storageUrl =
+    process.env.NEXT_PUBLIC_STORAGE_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    "";
 
   useEffect(() => {
     const fetchGalleries = async () => {
@@ -51,7 +55,8 @@ export default function GalleryPage() {
             {galleries.map((item) => (
               <div
                 key={item.id}
-                className="relative group overflow-hidden rounded-2xl shadow-md hover:shadow-lg transition-all duration-300"
+                onClick={() => item.image && setSelectedImage(item.image)}
+                className="relative group overflow-hidden rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
               >
                 {item.image ? (
                   <Image
@@ -74,6 +79,30 @@ export default function GalleryPage() {
           </div>
         )}
       </div>
+
+      {/* --- Modal for enlarged image --- */}
+      {selectedImage && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50"
+          onClick={() => setSelectedImage(null)}
+        >
+          <div className="relative max-w-4xl w-full px-4">
+            <button
+              className="absolute top-4 right-4 text-white hover:text-gray-300"
+              onClick={() => setSelectedImage(null)}
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <Image
+              src={selectedImage}
+              alt="Enlarged"
+              width={1000}
+              height={800}
+              className="w-full h-auto rounded-lg object-contain"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

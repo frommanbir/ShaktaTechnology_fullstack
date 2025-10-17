@@ -41,24 +41,35 @@ export default function EditGalleryPage() {
   const fetchGallery = async () => {
     try {
       setFetching(true);
-      const data = await getGallery(id);
+      const response = await getGallery(id);
+
+      const data = response?.data || response;
+
+      if (!data) throw new Error("Gallery not found");
+
       setGallery(data);
       setFormData({
         title: data.title || "",
         description: data.description || "",
         image: null,
       });
+
       if (data.image_url || data.image) {
-        setImagePreview(data.image_url || `${storageUrl}/storage/${data.image}`);
+        setImagePreview(
+          data.image?.startsWith("http")
+            ? data.image
+            : `${storageUrl}/storage/${data.image}`
+        );
       }
     } catch (error) {
       console.error("Failed to fetch gallery:", error);
       alert("Failed to load gallery item");
-      router.push('/admin/gallery');
+      router.push("/admin/gallery");
     } finally {
       setFetching(false);
     }
   };
+
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;

@@ -424,6 +424,41 @@ export const deleteNews = async (id: number) => {
   }
 };
 
+// Testimonials API Methods
+export const getTestimonials = async () => {
+  const response = await api.get('/testimonials');
+  return Array.isArray(response.data)
+    ? response.data
+    : response.data?.data || [];
+};
+
+export const getTestimonial = async (id: number) => {
+  const response = await api.get(`/testimonials/${id}`);
+  return response.data.data;
+};
+
+export const createTestimonial = async (data: FormData) => {
+  const response = await api.post('/testimonials', data, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data;
+};
+
+export const updateTestimonial = async (id: number, data: FormData) => {
+  if (!data.has('_method')) {
+    data.append('_method', 'PUT');
+  }
+
+  const response = await api.post(`/testimonials/${id}`, data, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data;
+};
+
+export const deleteTestimonial = async (id: number) => {
+  await api.delete(`/testimonials/${id}`);
+};
+
 export const apiClient = {
   logout: async () => {
     try {

@@ -6,7 +6,7 @@ export default function Home() {
       <Heading 
         title={
           <>
-            <span className="text-blue-400">Our Gallery</span>
+            Our<span className="text-blue-600"> Gallery</span>
           </>
         }
         desc="Explore our visual journey through innovative projects, creative solutions, and memorable moments"

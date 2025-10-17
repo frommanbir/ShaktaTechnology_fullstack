@@ -15,6 +15,8 @@ interface Setting {
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [settings, setSettings] = useState<Setting | null>(null);
+  const [showNavbar, setShowNavbar] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
   const storageUrl = process.env.NEXT_PUBLIC_STORAGE_URL;
 
   const navLinks = [
@@ -40,33 +42,47 @@ export default function Navbar() {
     fetchSettings();
   }, []);
 
+  // 👇 Navbar show/hide logic on scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      // hide when scrolling down, show when scrolling up
+      if (currentScrollY > lastScrollY && currentScrollY > 80) {
+        setShowNavbar(false);
+      } else {
+        setShowNavbar(true);
+      }
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [lastScrollY]);
+
   return (
-    <nav className="bg-white border-b shadow-sm fixed top-0 left-0 w-full z-50">
+    <nav
+      className={`bg-white border-b shadow-sm fixed top-0 left-0 w-full z-50 transition-transform duration-500 ${
+        showNavbar ? "translate-y-0" : "-translate-y-full"
+      }`}
+    >
       <div className="max-w-7xl mx-auto flex justify-between items-center px-6 h-16">
         
         {/* Left: Logo */}
         <Link href="/" className="flex items-center space-x-2">
-          {settings?.logo ? (
+          <div className="relative w-28 h-10">
             <Image
-              src={`${storageUrl}${settings.logo}`}
-              alt={settings.company_name || "Logo"}
-              width={120}
-              height={40}
-              className="object-contain h-10 w-auto"
+              src={
+                settings?.logo
+                  ? `${storageUrl}${settings.logo}`
+                  : "/logo/shaktalogo.png"
+              }
+              alt={settings?.company_name || "Logo"}
+              fill
+              sizes="(max-width: 768px) 120px, (max-width: 1200px) 160px, 200px"
+              className="object-contain"
               priority
             />
-          ) : (
-            <span className="text-xl font-semibold text-purple-700">
-              <Image
-              src={`/logo/shaktalogo.png`}
-              alt={"Logo"}
-              width={120}
-              height={40}
-              className="object-contain h-10 w-auto"
-              priority
-            />
-            </span>
-          )}
+          </div>
         </Link>
 
         {/* Desktop Navigation */}

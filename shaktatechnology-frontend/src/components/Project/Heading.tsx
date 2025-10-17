@@ -6,7 +6,7 @@ export default function Home() {
       <Heading 
         title={
           <>
-            Our <span className="text-blue-400">Projects</span>
+            Our <span className="text-blue-600">Projects</span>
           </>
         }
         desc="Explore our portfolio of successful projects that showcase our expertise and commitment to delivering exceptional results."

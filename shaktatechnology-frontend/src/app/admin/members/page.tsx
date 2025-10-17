@@ -5,6 +5,8 @@ import { getMembers, deleteMember } from "@/lib/api";
 import { Dialog, Transition } from "@headlessui/react";
 import { Linkedin, Github, Facebook, Instagram, Loader2, User, Pencil, Trash } from "lucide-react";
 import Image from "next/image";
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, TabStopPosition, TabStopType } from "docx";
+import { saveAs } from "file-saver";
 
 interface Member {
   id: number;
@@ -68,6 +70,243 @@ export default function AdminMembersPage() {
 
   function closeDeleteConfirmation() {
     setMemberToDelete(null);
+  }
+
+  async function exportMemberToWord(member: Member) {
+    // Helper function to create section headings
+    const createSectionHeading = (text: string) => {
+      return new Paragraph({
+        children: [
+          new TextRun({
+            text: text,
+            bold: true,
+            size: 28,
+            color: "2E5BFF",
+          }),
+        ],
+        heading: HeadingLevel.HEADING_2,
+        spacing: { after: 200, before: 400 },
+        border: { bottom: { color: "2E5BFF", size: 4, style: "single" } },
+      });
+    };
+
+    // Helper function to create contact info paragraph
+    const createContactInfo = (label: string, value: string) => {
+      if (!value || value === "-") return null;
+      return new Paragraph({
+        children: [
+          new TextRun({ text: `${label}: `, bold: true, size: 22 }),
+          new TextRun({ text: value, size: 22 }),
+        ],
+        spacing: { after: 120 },
+      });
+    };
+
+    const doc = new Document({
+      sections: [
+        {
+          properties: {
+            page: {
+              margin: {
+                top: 1000,
+                right: 1000,
+                bottom: 1000,
+                left: 1000,
+              },
+            },
+          },
+          children: [
+            // Header Section
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: member.name.toUpperCase(),
+                  bold: true,
+                  size: 36,
+                  color: "1A1A1A",
+                }),
+              ],
+              alignment: AlignmentType.CENTER,
+              spacing: { after: 300 },
+            }),
+
+            // Position and Department
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: member.position || "Professional",
+                  bold: true,
+                  size: 26,
+                  color: "2E5BFF",
+                }),
+              ],
+              alignment: AlignmentType.CENTER,
+              spacing: { after: 200 },
+            }),
+
+            member.department ? new Paragraph({
+              children: [
+                new TextRun({
+                  text: member.department,
+                  italics: true,
+                  size: 22,
+                  color: "666666",
+                }),
+              ],
+              alignment: AlignmentType.CENTER,
+              spacing: { after: 400 },
+            }) : new Paragraph({ text: "" }),
+
+            // Contact Information Section
+            createSectionHeading("CONTACT INFORMATION"),
+            
+            // Contact details in a structured format
+            new Paragraph({
+              children: [
+                new TextRun({ text: "Email: ", bold: true, size: 22 }),
+                new TextRun({ text: member.email, size: 22 }),
+              ],
+              spacing: { after: 120 },
+            }),
+
+            createContactInfo("Phone", member.phone || ""),
+            createContactInfo("Address", member.address || ""),
+            
+            // Social Media Links
+            ...(member.linkedin || member.github || member.facebook || member.instagram ? [
+              new Paragraph({
+                children: [
+                  new TextRun({ text: "Social Media: ", bold: true, size: 22 }),
+                  new TextRun({ 
+                    text: [
+                      member.linkedin ? "LinkedIn" : "",
+                      member.github ? "GitHub" : "",
+                      member.facebook ? "Facebook" : "",
+                      member.instagram ? "Instagram" : ""
+                    ].filter(Boolean).join(", "),
+                    size: 22 
+                  }),
+                ],
+                spacing: { after: 400 },
+              })
+            ] : []),
+
+            // Professional Summary/About Section
+            ...(member.about ? [
+              createSectionHeading("PROFESSIONAL SUMMARY"),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: member.about,
+                    size: 22,
+                  }),
+                ],
+                spacing: { after: 400 },
+              })
+            ] : []),
+
+            // Experience Section
+            ...(member.experience ? [
+              createSectionHeading("EXPERIENCE"),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: member.experience,
+                    size: 22,
+                  }),
+                ],
+                spacing: { after: 400 },
+              })
+            ] : []),
+
+            // Projects Section
+            ...(member.projects_involved ? [
+              createSectionHeading("PROJECTS INVOLVED"),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: member.projects_involved,
+                    size: 22,
+                  }),
+                ],
+                spacing: { after: 400 },
+              })
+            ] : []),
+
+            // Education Section
+            ...(member.education ? [
+              createSectionHeading("EDUCATION"),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: member.education,
+                    size: 22,
+                  }),
+                ],
+                spacing: { after: 400 },
+              })
+            ] : []),
+
+            // Training & Certifications Section
+            ...(member.training ? [
+              createSectionHeading("TRAINING & CERTIFICATIONS"),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: member.training,
+                    size: 22,
+                  }),
+                ],
+                spacing: { after: 400 },
+              })
+            ] : []),
+
+            // References Section
+            ...(member.reference ? [
+              createSectionHeading("REFERENCES"),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: member.reference,
+                    size: 22,
+                  }),
+                ],
+                spacing: { after: 400 },
+              })
+            ] : []),
+
+            // Additional Information
+            ...(member.role ? [
+              createSectionHeading("ADDITIONAL INFORMATION"),
+              new Paragraph({
+                children: [
+                  new TextRun({ text: "Role: ", bold: true, size: 22 }),
+                  new TextRun({ text: member.role, size: 22 }),
+                ],
+                spacing: { after: 400 },
+              })
+            ] : []),
+
+            // Footer
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "Generated on " + new Date().toLocaleDateString(),
+                  size: 18,
+                  color: "999999",
+                  italics: true,
+                }),
+              ],
+              alignment: AlignmentType.CENTER,
+              spacing: { before: 600 },
+            }),
+          ].filter(Boolean) as Paragraph[],
+        },
+      ],
+    });
+
+    const blob = await Packer.toBlob(doc);
+    saveAs(blob, `${member.name.replace(/\s+/g, "_")}_CV.docx`);
   }
 
   async function handleDelete() {
@@ -421,7 +660,13 @@ export default function AdminMembersPage() {
                     </>
                   )}
 
-                  <div className="flex justify-end mt-6">
+                  <div className="flex justify-end mt-6 space-x-3">
+                    <span
+                      onClick={() => exportMemberToWord(selectedMember!)}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 cursor-pointer"
+                    >
+                      Export as CV
+                    </span>
                     <span
                       onClick={closeMemberProfile}
                       className="px-4 py-2 bg-gray-300 rounded-md hover:bg-gray-400 cursor-pointer"
@@ -429,6 +674,7 @@ export default function AdminMembersPage() {
                       Close
                     </span>
                   </div>
+
                 </Dialog.Panel>
               </Transition.Child>
             </div>

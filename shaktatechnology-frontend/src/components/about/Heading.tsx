@@ -7,7 +7,7 @@ export default function Home() {
         title={
           <>
             About<br />
-            <span className="text-blue-400">ShaktaTechnology</span>
+            <span className="text-blue-600">ShaktaTechnology</span>
           </>
         }
         desc="Empowering businesses worldwide with innovative software solutions and digital transformation services since 2014."

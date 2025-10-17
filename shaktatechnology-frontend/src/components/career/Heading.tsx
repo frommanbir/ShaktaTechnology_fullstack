@@ -6,7 +6,7 @@ export default function Home() {
       <Heading 
         title={
           <>
-            Join Our <span className="text-blue-400">Amazing<br></br>Team</span>
+            Join Our <span className="text-blue-600">Amazing<br></br>Team</span>
           </>
         }
         desc="Build the future of software development with a team that values innovation, collaboration, and personal growth."

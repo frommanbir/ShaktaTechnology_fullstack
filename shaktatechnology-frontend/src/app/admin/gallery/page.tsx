@@ -20,8 +20,6 @@ export default function AdminGalleryListPage() {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const router = useRouter();
 
-  const storageUrl = process.env.NEXT_PUBLIC_STORAGE_URL || process.env.NEXT_PUBLIC_API_URL || "";
-
   useEffect(() => {
     const fetchGalleries = async () => {
       try {
@@ -75,52 +73,68 @@ export default function AdminGalleryListPage() {
         {galleries.length === 0 ? (
           <p className="text-gray-500 text-center">No gallery items available.</p>
         ) : (
-          <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {galleries.map((item) => (
-              <div
-                key={item.id}
-                className="relative bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all duration-300"
-              >
-                {item.image ? (
-                  <Image
-                    src={item.image}
-                    alt={item.title}
-                    width={300}
-                    height={200}
-                    className="w-full h-48 object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-48 bg-gray-200 flex items-center justify-center text-gray-500">
-                    No Image
-                  </div>
-                )}
-                <div className="p-4">
-                  <h3 className="font-semibold text-gray-900 mb-1">{item.title}</h3>
-                  {item.description && (
-                    <p className="text-sm text-gray-600 mb-4 line-clamp-2">{item.description}</p>
-                  )}
-                  <div className="flex justify-end space-x-2">
-                    <Link
-                      href={`/admin/gallery/${item.id}/edit`}
-                      className="p-2 text-indigo-600 hover:text-indigo-800"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Link>
-                    <button
-                      onClick={() => handleDelete(item.id)}
-                      disabled={deletingId === item.id}
-                      className="p-2 text-red-600 hover:text-red-800 disabled:opacity-50"
-                    >
-                      {deletingId === item.id ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
+          <div className="overflow-x-auto bg-white shadow-md rounded-lg">
+            <table className="min-w-full border-collapse">
+              <thead>
+                <tr className="bg-gray-100 text-left text-gray-700 uppercase text-sm">
+                  <th className="px-6 py-3 border-b">#</th>
+                  <th className="px-6 py-3 border-b">Image</th>
+                  <th className="px-6 py-3 border-b">Title</th>
+                  <th className="px-6 py-3 border-b">Description</th>
+                  <th className="px-6 py-3 border-b text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {galleries.map((item, index) => (
+                  <tr
+                    key={item.id}
+                    className="hover:bg-gray-50 transition-colors duration-200"
+                  >
+                    <td className="px-6 py-4 border-b text-gray-700">{index + 1}</td>
+                    <td className="px-6 py-4 border-b">
+                      {item.image ? (
+                        <Image
+                          src={item.image}
+                          alt={item.title}
+                          width={80}
+                          height={60}
+                          className="rounded-md object-cover border"
+                        />
                       ) : (
-                        <Trash2 className="w-4 h-4" />
+                        <div className="w-20 h-14 bg-gray-200 flex items-center justify-center text-gray-500 text-sm rounded-md">
+                          No Image
+                        </div>
                       )}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
+                    </td>
+                    <td className="px-6 py-4 border-b font-medium text-gray-900">
+                      {item.title}
+                    </td>
+                    <td className="px-6 py-4 border-b text-gray-600">
+                      {item.description || "-"}
+                    </td>
+                    <td className="px-6 py-4 border-b text-right space-x-2">
+                      <Link
+                        href={`/admin/gallery/${item.id}/edit`}
+                        className="inline-flex items-center p-2 text-indigo-600 hover:text-indigo-800"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Link>
+                      <button
+                        onClick={() => handleDelete(item.id)}
+                        disabled={deletingId === item.id}
+                        className="inline-flex items-center p-2 text-red-600 hover:text-red-800 disabled:opacity-50"
+                      >
+                        {deletingId === item.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>

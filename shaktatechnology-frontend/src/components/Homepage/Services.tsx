@@ -22,7 +22,7 @@ export default function ServicesPage() {
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const res = await getServices(); // returns { success, data }
+        const res = await getServices();
         if (res.success) {
           setServices(res.data);
         } else {
@@ -82,7 +82,7 @@ export default function ServicesPage() {
 
       {/* Services Grid */}
       <section className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 px-4 sm:px-6 lg:px-8">
-        {services.map((service) => (
+        {services.slice(0,3).map((service) => (
           <div
             key={service.id}
             className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 flex flex-col justify-between hover:shadow-md transition-all duration-300"
@@ -129,9 +129,11 @@ export default function ServicesPage() {
             </div>
 
             {/* Call to Action Button */}
-            <button className="mt-auto flex items-center justify-center gap-2 bg-indigo-500 text-white font-medium py-2 rounded-xl hover:bg-indigo-600 transition">
+            <Link href="/contact" passHref>
+            <button className="w-full mt-auto flex items-center justify-center gap-2 bg-indigo-500 text-white font-medium py-2 rounded-xl hover:bg-indigo-600 transition">
               Get Started <ArrowRight size={16} />
             </button>
+            </Link>
           </div>
         ))}
       </section>
