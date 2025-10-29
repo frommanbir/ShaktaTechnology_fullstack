@@ -1,8 +1,8 @@
 'use client';
 
-import { useRouter } from "next/navigation";
-import { apiClient } from "@/lib/api";
-import { useEffect, useState } from "react";
+import { useRouter } from 'next/navigation';
+import { apiClient } from '@/lib/api';
+import { useEffect, useState } from 'react';
 
 export function Navbar() {
   const router = useRouter();
@@ -19,23 +19,25 @@ export function Navbar() {
   };
 
   return (
-    <div className="bg-white shadow-sm border-b fixed top-0 right-0 left-64 z-10">
-      <div className="flex justify-between items-center px-6 h-16">
-        <div className="flex-1">
-          <h2 className="text-xl font-semibold font-poppins">Dashboard</h2>
-        </div>
-        <div className="flex items-center space-x-4">
+    <header className="fixed top-0 left-64 right-0 z-20 bg-white shadow-sm border-b border-gray-200 h-16 flex items-center px-6">
+      <div className="flex justify-between items-center w-full">
+        <h2 className="text-xl font-semibold font-poppins text-gray-800">
+          Admin Dashboard
+        </h2>
+        <div className="flex items-center gap-4">
           {userEmail && (
-            <span className="text-sm text-gray-600">{userEmail}</span>
+            <span className="text-sm text-gray-600 font-poppins">
+              {userEmail}
+            </span>
           )}
           <button
             onClick={handleLogout}
-            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors font-poppins"
+            className="px-4 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition-all font-poppins"
           >
             Logout
           </button>
         </div>
       </div>
-    </div>
+    </header>
   );
 }

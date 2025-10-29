@@ -6,6 +6,7 @@ import { Dialog, Transition } from "@headlessui/react";
 import { Loader2, Trash2, Edit } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/components/Toast";
+import SearchBar from "@/components/SearchBar";
 
 interface Faq {
   id: number;
@@ -17,6 +18,7 @@ interface Faq {
 export default function AdminFaqsPage() {
   const { toast } = useToast();
   const [faqs, setFaqs] = useState<Faq[]>([]);
+  const [filteredFaqs, setFilteredFaqs] = useState<Faq[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
@@ -42,6 +44,21 @@ export default function AdminFaqsPage() {
     fetchFaqs();
   }, []);
 
+  const handleSearch = (query: string) => {
+    if (!query) {
+      setFilteredFaqs(faqs);
+      return;
+    }
+    const lower = query.toLowerCase();
+    setFilteredFaqs(
+      faqs.filter(
+        (faq) =>
+          faq.question.toLowerCase().includes(lower) ||
+          faq.answer.toLowerCase().includes(lower)
+      )
+    );
+  };
+
   const handleDelete = async () => {
     if (!faqToDelete) return;
     setIsDeleting(true);
@@ -63,12 +80,19 @@ export default function AdminFaqsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <h1 className="text-2xl font-bold">FAQs</h1>
-        <Link
-          href="/admin/faqs/add"
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-        >
-          Add FAQ
-        </Link>
+
+        <div className="flex-1 min-w-[200x]">
+          <SearchBar onSearch={handleSearch} placeholder="Search FAQs..." />
+        </div>
+
+        <div className="flex items-center gap-4 w-full sm:w-auto">
+          <Link
+            href="/admin/faqs/add"
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          >
+            Add FAQ
+          </Link>
+        </div>
       </div>
 
       {/* Error */}

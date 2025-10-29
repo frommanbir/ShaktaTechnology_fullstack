@@ -7,6 +7,7 @@ import { Linkedin, Github, Facebook, Instagram, Loader2, User, Pencil, Trash } f
 import Image from "next/image";
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, TabStopPosition, TabStopType } from "docx";
 import { saveAs } from "file-saver";
+import SearchBar from "@/components/SearchBar";
 
 interface Member {
   id: number;
@@ -33,6 +34,7 @@ interface Member {
 
 export default function AdminMembersPage() {
   const [members, setMembers] = useState<Member[]>([]);
+  const [filteredMembers, setFilteredMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [viewImage, setViewImage] = useState<string | null>(null);
@@ -52,6 +54,7 @@ export default function AdminMembersPage() {
     try {
       const res = await getMembers(page, limit);
       setMembers(res.data || []);
+      setFilteredMembers(res.data || []);
       setTotalPages(res.total_pages || 1);
     } catch (err) {
       console.error(err);
@@ -305,6 +308,8 @@ export default function AdminMembersPage() {
       ],
     });
 
+    
+
     const blob = await Packer.toBlob(doc);
     saveAs(blob, `${member.name.replace(/\s+/g, "_")}_CV.docx`);
   }
@@ -338,17 +343,41 @@ export default function AdminMembersPage() {
     setViewImage(null);
   }
 
+  const handleSearch = (query: string) => {
+      if (!query) {
+        setFilteredMembers(members);
+        return;
+      }
+      const lower = query.toLowerCase();
+      setFilteredMembers(
+        members.filter(
+          (m) =>
+            m.name.toLowerCase().includes(lower) ||
+            m.email.toLowerCase().includes(lower) ||
+            (m.department && m.department.toLowerCase().includes(lower)) ||
+            (m.position && m.position.toLowerCase().includes(lower))
+        )
+      );
+    };
+
   return (
     <div className="p-6">
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Members</h1>
-          <a
-            href="/admin/members/add"
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
-            Add New Member
-          </a>
+          <h1 className="text-3xl font-bold">Members</h1>
+
+          <div className="flex-1 min-w-[200x]">
+            <SearchBar onSearch={handleSearch} placeholder="Search members..." />
+          </div>
+          
+          <div className="flex items-center gap-4 w-full sm:w-auto">
+            <a
+              href="/admin/members/add"
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            >
+              Add New Member
+            </a>
+          </div>
         </div>
 
         {/* Loader */}

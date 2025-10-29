@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 export default function AddMemberPage() {
   const router = useRouter();
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -27,9 +28,12 @@ export default function AddMemberPage() {
     reference: "",
     image: null as File | null,
   });
+
+  const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Handle text and textarea fields
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -37,21 +41,46 @@ export default function AddMemberPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Handle file input (image)
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
     setFormData((prev) => ({ ...prev, image: file }));
+
+    // Show preview
+    if (file) {
+      setPreview(URL.createObjectURL(file));
+    } else {
+      setPreview(null);
+    }
   };
 
+  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
-      await createMember(formData);
+      const data = new FormData();
+
+      Object.entries(formData).forEach(([key, value]) => {
+        if (value !== null && value !== "") {
+          data.append(key, value as any);
+        }
+      });
+
+      // Debug check (optional)
+      // for (let pair of data.entries()) console.log(pair[0], pair[1]);
+
+      await createMember(data);
       router.push("/admin/members");
     } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to add member");
+      console.error("Error:", err.response?.data);
+      setError(
+        err.response?.data?.errors
+          ? JSON.stringify(err.response.data.errors)
+          : err.response?.data?.message || "Failed to add member"
+      );
     } finally {
       setLoading(false);
     }
@@ -71,7 +100,7 @@ export default function AddMemberPage() {
         onSubmit={handleSubmit}
         className="grid grid-cols-1 md:grid-cols-2 gap-4"
       >
-        {/* Column 1 */}
+        {/* Name and Email */}
         <div>
           <label className="block text-gray-700 mb-2">Name *</label>
           <input
@@ -96,73 +125,38 @@ export default function AddMemberPage() {
           />
         </div>
 
-        <div>
-          <label className="block text-gray-700 mb-2">Phone</label>
-          <input
-            type="text"
-            name="phone"
-            value={formData.phone}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border rounded-md"
-          />
-        </div>
+        {/* Other text fields */}
+        {[
+          "phone",
+          "department",
+          "position",
+          "role",
+          "experience",
+          "projects_involved",
+          "linkedin",
+          "facebook",
+          "instagram",
+          "github",
+          "address",
+          "training",
+          "education",
+          "reference",
+        ].map((field) => (
+          <div key={field}>
+            <label className="block text-gray-700 mb-2 capitalize">
+              {field.replace("_", " ")}
+            </label>
+            <input
+              type="text"
+              name={field}
+              value={(formData as any)[field]}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border rounded-md"
+            />
+          </div>
+        ))}
 
-        <div>
-          <label className="block text-gray-700 mb-2">Department</label>
-          <input
-            type="text"
-            name="department"
-            value={formData.department}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border rounded-md"
-          />
-        </div>
-
-        <div>
-          <label className="block text-gray-700 mb-2">Position</label>
-          <input
-            type="text"
-            name="position"
-            value={formData.position}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border rounded-md"
-          />
-        </div>
-
-        <div>
-          <label className="block text-gray-700 mb-2">Role</label>
-          <input
-            type="text"
-            name="role"
-            value={formData.role}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border rounded-md"
-          />
-        </div>
-
-        <div>
-          <label className="block text-gray-700 mb-2">Experience</label>
-          <input
-            type="text"
-            name="experience"
-            value={formData.experience}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border rounded-md"
-          />
-        </div>
-
-        <div>
-          <label className="block text-gray-700 mb-2">Projects Involved</label>
-          <input
-            type="text"
-            name="projects_involved"
-            value={formData.projects_involved}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border rounded-md"
-          />
-        </div>
-
-        {/* Column 2 */}
+        {/* About */}
         <div className="md:col-span-2">
           <label className="block text-gray-700 mb-2">About</label>
           <textarea
@@ -174,61 +168,7 @@ export default function AddMemberPage() {
           />
         </div>
 
-        <div>
-          <label className="block text-gray-700 mb-2">LinkedIn</label>
-          <input
-            type="url"
-            name="linkedin"
-            value={formData.linkedin}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border rounded-md"
-          />
-        </div>
-
-        <div>
-          <label className="block text-gray-700 mb-2">Facebook</label>
-          <input
-            type="url"
-            name="facebook"
-            value={formData.facebook}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border rounded-md"
-          />
-        </div>
-
-        <div>
-          <label className="block text-gray-700 mb-2">Instagram</label>
-          <input
-            type="url"
-            name="instagram"
-            value={formData.instagram}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border rounded-md"
-          />
-        </div>
-
-        <div>
-          <label className="block text-gray-700 mb-2">GitHub</label>
-          <input
-            type="url"
-            name="github"
-            value={formData.github}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border rounded-md"
-          />
-        </div>
-
-        <div>
-          <label className="block text-gray-700 mb-2">Address</label>
-          <input
-            type="text"
-            name="address"
-            value={formData.address}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border rounded-md"
-          />
-        </div>
-
+        {/* Short Description */}
         <div className="md:col-span-2">
           <label className="block text-gray-700 mb-2">Short Description</label>
           <textarea
@@ -240,39 +180,7 @@ export default function AddMemberPage() {
           />
         </div>
 
-        <div>
-          <label className="block text-gray-700 mb-2">Training</label>
-          <input
-            type="text"
-            name="training"
-            value={formData.training}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border rounded-md"
-          />
-        </div>
-
-        <div>
-          <label className="block text-gray-700 mb-2">Education</label>
-          <input
-            type="text"
-            name="education"
-            value={formData.education}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border rounded-md"
-          />
-        </div>
-
-        <div>
-          <label className="block text-gray-700 mb-2">Reference</label>
-          <input
-            type="text"
-            name="reference"
-            value={formData.reference}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border rounded-md"
-          />
-        </div>
-
+        {/* Image Upload */}
         <div className="md:col-span-2">
           <label className="block text-gray-700 mb-2">Image</label>
           <input
@@ -282,8 +190,20 @@ export default function AddMemberPage() {
             className="w-full px-3 py-2 border rounded-md"
             accept="image/*"
           />
+
+          {preview && (
+            <div className="mt-4">
+              <p className="text-gray-600 mb-1">Image Preview:</p>
+              <img
+                src={preview}
+                alt="Preview"
+                className="w-40 h-40 object-cover rounded-md border"
+              />
+            </div>
+          )}
         </div>
 
+        {/* Submit */}
         <div className="md:col-span-2">
           <button
             type="submit"

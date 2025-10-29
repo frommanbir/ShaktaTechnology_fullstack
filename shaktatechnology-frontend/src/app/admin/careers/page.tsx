@@ -6,6 +6,7 @@ import { Dialog, Transition } from "@headlessui/react";
 import { Loader2, Trash2, Edit } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import SearchBar from "@/components/SearchBar";
 
 interface Career {
   id: number;
@@ -21,6 +22,7 @@ interface Career {
 export default function AdminCareersPage() {
   const router = useRouter();
   const [careers, setCareers] = useState<Career[]>([]);
+  const [filteredCareers, setFilteredCareers] = useState<Career[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
@@ -31,8 +33,9 @@ export default function AdminCareersPage() {
     async function fetchCareers() {
       setLoading(true);
       try {
-        const careers = await getCareers(); // This is already the array
-        setCareers(careers); // No need for `.data`
+        const careersData = await getCareers();
+        setCareers(careersData);
+        setFilteredCareers(careersData);
       } catch (err: any) {
         setError(err.response?.data?.message || "Failed to fetch careers");
       } finally {
@@ -42,13 +45,33 @@ export default function AdminCareersPage() {
     fetchCareers();
   }, []);
 
+  // 🔍 Search handler
+  const handleSearch = (query: string) => {
+    if (!query) {
+      setFilteredCareers(careers);
+    } else {
+      const lower = query.toLowerCase();
+      setFilteredCareers(
+        careers.filter(
+          (career) =>
+            career.title.toLowerCase().includes(lower) ||
+            career.department?.toLowerCase().includes(lower) ||
+            career.location?.toLowerCase().includes(lower) ||
+            career.type.toLowerCase().includes(lower)
+        )
+      );
+    }
+  };
 
+  // 🗑️ Delete logic
   const handleDelete = async () => {
     if (!careerToDelete) return;
     setIsDeleting(true);
     try {
       await deleteCareer(careerToDelete.id);
-      setCareers(careers.filter((career) => career.id !== careerToDelete.id));
+      const updated = careers.filter((c) => c.id !== careerToDelete.id);
+      setCareers(updated);
+      setFilteredCareers(updated);
       setShowDeleteModal(false);
       setCareerToDelete(null);
     } catch (err: any) {
@@ -60,28 +83,38 @@ export default function AdminCareersPage() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Careers</h1>
-        <Link
-          href="/admin/careers/add"
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-        >
-          Add Career
-        </Link>
+      {/* Header Section */}
+      <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+        <h1 className="text-2xl font-bold text-gray-800">Careers</h1>
+
+        <div className="flex-1 min-w-[200x]">
+        <SearchBar onSearch={handleSearch} placeholder="Search careers..." />
+        </div>
+
+        <div className="flex items-center gap-4 w-full sm:w-auto">
+          <Link
+            href="/admin/careers/add"
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+          >
+            Add Career
+          </Link>
+        </div>
       </div>
 
+      {/* Error Message */}
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
           {error}
         </div>
       )}
 
+      {/* Loading Spinner */}
       {loading ? (
         <div className="flex justify-center items-center h-64">
           <Loader2 className="animate-spin h-12 w-12 text-blue-600" />
         </div>
-      ) : careers.length === 0 ? (
-        <p className="text-gray-600">No careers found.</p>
+      ) : filteredCareers.length === 0 ? (
+        <p className="text-gray-600 text-center">No careers found.</p>
       ) : (
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <table className="min-w-full divide-y divide-gray-200">
@@ -105,7 +138,7 @@ export default function AdminCareersPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {careers.map((career) => (
+              {filteredCareers.map((career) => (
                 <tr key={career.id}>
                   <td className="px-6 py-4 whitespace-nowrap">{career.title}</td>
                   <td className="px-6 py-4 whitespace-nowrap">{career.department || "N/A"}</td>
@@ -165,8 +198,9 @@ export default function AdminCareersPage() {
                   Confirm Deletion
                 </Dialog.Title>
                 <p className="text-gray-600 mb-6">
-                  Are you sure you want to delete the career{" "}
-                  <span className="font-semibold">{careerToDelete?.title}</span>? This action cannot be undone.
+                  Are you sure you want to delete{" "}
+                  <span className="font-semibold">{careerToDelete?.title}</span>? This action cannot
+                  be undone.
                 </p>
                 <div className="flex justify-end space-x-3">
                   <button

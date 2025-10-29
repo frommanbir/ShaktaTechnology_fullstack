@@ -56,18 +56,13 @@ export const getMember = async (id: number) => {
   return response.data.data;
 };
 
-export const createMember = async (data: any) => {
-  const formData = new FormData();
-  Object.keys(data).forEach((key) => {
-    if (data[key] !== undefined && data[key] !== null) {
-      formData.append(key, data[key]);
-    }
-  });
-  const response = await api.post('/members', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
+export const createMember = async (formData: FormData) => {
+  const response = await api.post("/members", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
   });
   return response.data;
 };
+
 
 // FIXED: Use POST with _method=PUT for file uploads
 export const updateMember = async (id: number, data: any) => {
@@ -457,6 +452,26 @@ export const updateTestimonial = async (id: number, data: FormData) => {
 
 export const deleteTestimonial = async (id: number) => {
   await api.delete(`/testimonials/${id}`);
+};
+
+//visit counter api
+
+export const trackVisit = async (page: string = "/") => {
+  try{
+    await api.post('/track-visit', { page });
+  }catch (error){
+    console.error('Error tracking visit:', error);
+  }
+};
+
+export const getVisitCount = async () => {
+  try{
+    const response = await api.get("/track-visit");
+    return response.data.total ?? 0;
+  }catch (error){
+    console.error('Error fetching visit count:', error);
+    return 0;
+  }
 };
 
 export const apiClient = {

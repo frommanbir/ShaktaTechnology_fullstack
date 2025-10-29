@@ -1,17 +1,47 @@
 "use client";
 
-import { Mail, Phone, MapPin, Twitter, Linkedin, Github, ArrowUp } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Mail, Phone, MapPin, ArrowUp, Eye, Facebook, Instagram } from "lucide-react";
+import { Twitter, Linkedin, Github } from "lucide-react";
+import { trackVisit, getVisitCount, getSettings } from "@/lib/api";
+
+// Map your settings keys to icons
+const SOCIAL_ICONS: Record<string, any> = {
+  twitter: Twitter,
+  linkedin: Linkedin,
+  instagram: Instagram,
+  facebook: Facebook,
+};
 
 export default function Footer() {
+  const [visitCount, setVisitCount] = useState<number | null>(null);
+  const [settings, setSettings] = useState<Record<string, string>>({});
+
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const page = window.location.pathname;
+        await trackVisit(page);
+        const total = await getVisitCount();
+        setVisitCount(total);
+
+        const settingsData = await getSettings();
+        setSettings(settingsData); // store all settings dynamically
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
+    fetchData();
+  }, []);
+
   return (
     <>
-      <footer className="bg-white border-t mt-12">
+      <footer className="bg-white border-t border-purple-200 mt-12">
         <div className="max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          
           {/* Company Info */}
           <div>
             <h2 className="text-xl font-bold">
@@ -22,16 +52,24 @@ export default function Footer() {
               Empowering businesses with cutting-edge software solutions and
               digital transformation services.
             </p>
+
+            {/* Dynamic Social Links */}
             <div className="flex space-x-4 mt-4 text-gray-600">
-              <a href="#" className="hover:text-purple-500">
-                <Twitter size={22} />
-              </a>
-              <a href="#" className="hover:text-purple-500">
-                <Linkedin size={22} />
-              </a>
-              <a href="#" className="hover:text-purple-500">
-                <Github size={22} />
-              </a>
+              {Object.entries(SOCIAL_ICONS).map(([key, Icon]) => {
+                const url = settings[key];
+                if (!url) return null;
+                return (
+                  <a
+                    key={key}
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-purple-500"
+                  >
+                    <Icon size={22} />
+                  </a>
+                );
+              })}
             </div>
           </div>
 
@@ -63,24 +101,29 @@ export default function Footer() {
             <h3 className="font-semibold text-gray-900 mb-3">Contact Info</h3>
             <ul className="space-y-3 text-gray-600">
               <li className="flex items-center gap-2">
-                <Mail size={18} className="text-purple-500" />
-                info@shaktatechnology.com
+                <Mail size={18} className="text-purple-500" /> info@shaktatechnology.com
               </li>
               <li className="flex items-center gap-2">
-                <Phone size={18} className="text-purple-500" />
-                +1 (555) 123-4567
+                <Phone size={18} className="text-purple-500" /> +1 (555) 123-4567
               </li>
               <li className="flex items-center gap-2">
-                <MapPin size={18} className="text-purple-500" />
-                Kuleshwor Kathmandu Nepal
+                <MapPin size={18} className="text-purple-500" /> Kuleshwor Kathmandu Nepal
               </li>
             </ul>
+
+            {/* Visit Counter */}
+            <div className="mt-2 flex items-center text-purple-600">
+              <Eye size={16} className="mr-1" />
+              <span className="text-lg">
+                {visitCount !== null ? `${visitCount} visits` : "Loading..."}
+              </span>
+            </div>
           </div>
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t text-center py-4 text-gray-500 text-sm">
-          © 2024 ShaktaTechnology. All rights reserved.
+        <div className="border-t border-purple-200 text-center py-4 text-gray-500 text-sm flex flex-col items-center justify-center">
+          <p>© 2024 ShaktaTechnology. All rights reserved.</p>
         </div>
       </footer>
 

@@ -11,6 +11,7 @@ use App\Http\Controllers\API\SettingController;
 use App\Http\Controllers\API\GalleryController;
 use App\Http\Controllers\API\NewsController;
 use App\Http\Controllers\TestimonialController;
+use App\Http\Controllers\VisitController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -48,6 +49,9 @@ Route::get('/news/{id}',[NewsController::class, 'show']);
 
 route::get('/testimonials', [TestimonialController::class, 'index']);
 route::get('/testimonials/{id}', [TestimonialController::class, 'show']);
+
+Route::get('/track-visit', [VisitController::class, 'count']);
+Route::post('/track-visit', [VisitController::class, 'track']);
 
 // Routes protected by Sanctum
 Route::middleware('auth:sanctum')->group(function () {

@@ -109,7 +109,7 @@ export default function Navbar() {
 
       {/* Mobile Dropdown */}
       {isOpen && (
-        <div className="md:hidden bg-white border-t shadow-sm">
+        <div className="md:hidden bg-white border-t-4 border-purple-600 shadow-sm">
           <div className="flex flex-col px-6 py-4 space-y-3">
             {navLinks.map((link) => (
               <Link

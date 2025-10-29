@@ -110,7 +110,7 @@ class CareerController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'title' => 'sometimes|required|string|max:255|unique:careers,title',
+            'title' => 'sometimes|required|string|max:255|unique:careers,title,' . $id,
             'department' => 'nullable|string|max:255',
             'location' => 'nullable|string|max:255',
             'type' => 'sometimes|required|in:Full-time,Part-time,Internship,Contract',

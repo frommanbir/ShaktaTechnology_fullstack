@@ -171,6 +171,19 @@ export default function FAQ() {
         {/* Search Bar */}
         <div className="max-w-md mx-auto mb-8 lg:mb-12">
           <div className="relative">
+            <input
+              type="text"
+              placeholder="Search FAQs..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-4 py-3 pl-10 pr-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all duration-200"
+              aria-label="Search frequently asked questions"
+            />
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
             {searchTerm && (
               <button
                 onClick={() => setSearchTerm("")}
@@ -268,18 +281,19 @@ export default function FAQ() {
           </div>
         )}
 
-        {/* View More Button */}
-        {!searchTerm && faqs.length > 6 && (
-          <div className="text-center mt-12 lg:mt-16">
-            <button
-              onClick={() => router.push("/faqs")}
-              className="group inline-flex items-center px-8 py-4 bg-violet-600 text-white font-semibold rounded-xl hover:bg-violet-700 transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 shadow-lg hover:shadow-xl"
-            >
-              View All FAQs
-              <ArrowRight className="ml-3 h-5 w-5 transition-transform duration-200 group-hover:translate-x-1" />
-            </button>
-          </div>
-        )}
+        {/* Contact CTA */}
+        <div className="text-center mt-12 lg:mt-16 pt-8 border-t border-gray-200">
+          <p className="text-gray-600 mb-4">
+            Still have questions? We're here to help!
+          </p>
+          <button
+            onClick={() => router.push("/contact")}
+            className="inline-flex items-center px-6 py-3 border-2 border-violet-600 text-violet-600 font-medium rounded-lg hover:bg-violet-600 hover:text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2"
+          >
+            Contact Us
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </button>
+        </div>
       </div>
     </section>
   );

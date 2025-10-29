@@ -1,60 +1,44 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getGalleries, deleteGallery } from "@/lib/api";
-import { useRouter } from "next/navigation";
-import Image from "next/image";
-import { Loader2, Plus, Edit, Trash2, ImageIcon } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { getNews, deleteNews } from "@/lib/api";
+import { News } from "@/components/types/news";
 
-interface Gallery {
-  id: number;
-  title: string;
-  description?: string;
-  image?: string;
-}
-
-export default function AdminGalleryListPage() {
-  const [galleries, setGalleries] = useState<Gallery[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [deletingId, setDeletingId] = useState<number | null>(null);
+export default function NewsPage() {
   const router = useRouter();
-
-  const storageUrl =
-    process.env.NEXT_PUBLIC_STORAGE_URL ||
-    process.env.NEXT_PUBLIC_API_URL ||
-    "";
-
-  // ✅ Helper function to handle both relative and absolute image URLs
-  const getImageUrl = (path?: string): string | null => {
-    if (!path) return null;
-    if (path.startsWith("http")) return path;
-    return `${storageUrl.replace(/\/$/, "")}/${path.replace(/^\/+/, "")}`;
-  };
+  const [newsList, setNewsList] = useState<News[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   useEffect(() => {
-    const fetchGalleries = async () => {
+    const fetchNews = async () => {
       try {
-        const data = await getGalleries();
-        setGalleries(data);
-      } catch (error) {
-        console.error("Failed to fetch galleries:", error);
+        setLoading(true);
+        const data = await getNews();
+        setNewsList(data);
+      } catch (err) {
+        console.error("Error fetching news:", err);
+        setError("Failed to fetch news articles.");
       } finally {
         setLoading(false);
       }
     };
-    fetchGalleries();
+
+    fetchNews();
   }, []);
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this gallery?")) return;
-    setDeletingId(id);
+    if (!confirm("Are you sure you want to delete this article?")) return;
     try {
-      await deleteGallery(id);
-      setGalleries((prev) => prev.filter((g) => g.id !== id));
-    } catch (error) {
-      console.error("Failed to delete gallery:", error);
-      alert("Failed to delete gallery.");
+      setDeletingId(id);
+      await deleteNews(id);
+      setNewsList((prev) => prev.filter((n) => n.id !== id));
+    } catch (err) {
+      console.error("Error deleting news:", err);
+      setError("Failed to delete news article.");
     } finally {
       setDeletingId(null);
     }
@@ -62,91 +46,102 @@ export default function AdminGalleryListPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen bg-gray-50">
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="animate-pulse text-gray-500">Loading news articles...</div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen py-8 px-6 bg-gray-50">
+    <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Gallery Management
-          </h1>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-3xl font-bold text-gray-900">News Articles</h1>
           <Link
-            href="/admin/gallery/add"
-            className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            href="/admin/news/add"
+            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
           >
-            <Plus className="w-4 h-4 mr-2" />
-            Add New Gallery
+            + Add New Article
           </Link>
         </div>
 
-        {/* Empty state */}
-        {galleries.length === 0 ? (
-          <p className="text-gray-500 text-center">
-            No gallery items available.
-          </p>
-        ) : (
-          <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {galleries.map((item) => {
-              const imageUrl = getImageUrl(item.image);
-              return (
-                <div
-                  key={item.id}
-                  className="relative bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all duration-300"
-                >
-                  {/* Image */}
-                  {imageUrl ? (
-                    <Image
-                      src={imageUrl}
-                      alt={item.title}
-                      width={300}
-                      height={200}
-                      className="w-full h-48 object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-48 bg-gray-200 flex items-center justify-center text-gray-500">
-                      <ImageIcon className="w-8 h-8 opacity-50" />
-                    </div>
-                  )}
+        {/* Error */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+            {error}
+          </div>
+        )}
 
-                  {/* Content */}
-                  <div className="p-4">
-                    <h3 className="font-semibold text-gray-900 mb-1">
-                      {item.title}
-                    </h3>
-                    {item.description && (
-                      <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                        {item.description}
-                      </p>
-                    )}
-                    <div className="flex justify-end space-x-2">
+        {/* News Table */}
+        {newsList.length === 0 ? (
+          <p className="text-gray-500">No news articles found.</p>
+        ) : (
+          <div className="overflow-x-auto bg-white rounded-lg shadow">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Title
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Category
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Author
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Date
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Featured
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {newsList.map((news) => (
+                  <tr key={news.id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-gray-900">{news.title}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-gray-500">{news.category}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-gray-500">{news.author}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-gray-500">
+                      {news.date ? new Date(news.date).toLocaleDateString() : "-"}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {news.featured ? (
+                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                          Yes
+                        </span>
+                      ) : (
+                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                          No
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                       <Link
-                        href={`/admin/gallery/${item.id}/edit`}
-                        className="p-2 text-indigo-600 hover:text-indigo-800"
+                        href={`/admin/news/${news.id}/edit`}
+                        className="text-purple-600 hover:text-purple-900"
                       >
-                        <Edit className="w-4 h-4" />
+                        Edit
                       </Link>
                       <button
-                        onClick={() => handleDelete(item.id)}
-                        disabled={deletingId === item.id}
-                        className="p-2 text-red-600 hover:text-red-800 disabled:opacity-50"
+                        onClick={() => handleDelete(news.id)}
+                        disabled={deletingId === news.id}
+                        className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {deletingId === item.id ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <Trash2 className="w-4 h-4" />
-                        )}
+                        {deletingId === news.id ? "Deleting..." : "Delete"}
                       </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
