@@ -6,11 +6,9 @@ import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { DetaType } from "@/components/types/CareerTypes";
 
-
 export default function AddCareerPage() {
   const router = useRouter();
   const [formData, setFormData] = useState<DetaType>({
-    
     title: "",
     department: "",
     location: "",
@@ -45,55 +43,61 @@ export default function AddCareerPage() {
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">Add Career</h1>
+    <div className="p-6 max-w-4xl mx-auto dark:bg-gray-900 min-h-screen transition-colors duration-300">
+      <h1 className="text-2xl font-bold mb-6 text-gray-800 dark:text-gray-100">Add Career</h1>
 
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+        <div className="bg-red-100 border border-red-400 text-red-700 dark:bg-red-900 dark:border-red-700 dark:text-red-200 px-4 py-3 rounded mb-4">
           {error}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 space-y-6">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 space-y-6 transition-colors duration-300"
+      >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-gray-700 mb-2">Title *</label>
+            <label className="block text-gray-700 dark:text-gray-300 mb-2">Title *</label>
             <input
               type="text"
               name="title"
               value={formData.title}
               onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-md"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
           </div>
+
           <div>
-            <label className="block text-gray-700 mb-2">Department</label>
+            <label className="block text-gray-700 dark:text-gray-300 mb-2">Department</label>
             <input
               type="text"
               name="department"
               value={formData.department}
               onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-md"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
+
           <div>
-            <label className="block text-gray-700 mb-2">Location</label>
+            <label className="block text-gray-700 dark:text-gray-300 mb-2">Location</label>
             <input
               type="text"
               name="location"
               value={formData.location}
               onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-md"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
+
           <div>
-            <label className="block text-gray-700 mb-2">Type *</label>
+            <label className="block text-gray-700 dark:text-gray-300 mb-2">Type *</label>
             <select
               name="type"
               value={formData.type}
               onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-md"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             >
               <option value="Full-time">Full-time</option>
@@ -102,54 +106,64 @@ export default function AddCareerPage() {
               <option value="Contract">Contract</option>
             </select>
           </div>
+
           <div className="col-span-2">
-            <label className="block text-gray-700 mb-2">Description *</label>
+            <label className="block text-gray-700 dark:text-gray-300 mb-2">Description *</label>
             <textarea
               name="description"
               value={formData.description}
               onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-md"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
               rows={4}
               required
             />
           </div>
+
           <div className="col-span-2">
-            <label className="block text-gray-700 mb-2">Requirements *</label>
+            <label className="block text-gray-700 dark:text-gray-300 mb-2">Requirements *</label>
             <textarea
               name="requirements"
               value={formData.requirements}
               onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-md"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
               rows={4}
               required
             />
           </div>
+
           <div className="col-span-2">
-            <label className="block text-gray-700 mb-2">Benefits</label>
+            <label className="block text-gray-700 dark:text-gray-300 mb-2">Benefits</label>
             <textarea
               name="benefits"
               value={formData.benefits}
               onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-md"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
               rows={4}
             />
           </div>
         </div>
+
         <div className="flex justify-end space-x-3">
           <button
             type="button"
             onClick={() => router.push("/admin/careers")}
-            className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400"
+            className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 transition-colors"
             disabled={loading}
           >
             Cancel
           </button>
           <button
             type="submit"
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors disabled:opacity-50 flex items-center"
             disabled={loading}
           >
-            {loading ? "Creating..." : "Create Career"}
+            {loading ? (
+              <>
+                <Loader2 className="animate-spin h-4 w-4 mr-2" /> Creating...
+              </>
+            ) : (
+              "Create Career"
+            )}
           </button>
         </div>
       </form>

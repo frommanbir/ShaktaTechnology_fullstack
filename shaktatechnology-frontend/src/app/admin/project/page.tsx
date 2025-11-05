@@ -94,7 +94,7 @@ export default function AdminProjectsPage() {
   ];
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-6 max-w-7xl mx-auto bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100 transition-colors duration-300">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-4 sm:space-y-0">
         <div className="flex items-center space-x-4">
           <h1 className="text-2xl font-bold">Projects</h1>
@@ -128,9 +128,9 @@ export default function AdminProjectsPage() {
           {selectedCategory ? `No projects found in "${selectedCategory}".` : "No projects found."}
         </p>
       ) : (
-        <div className="bg-white rounded-lg shadow overflow-x-auto">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-x-auto transition-colors duration-300">
           <table className="min-w-full divide-y divide-gray-200 table-fixed">
-            <thead className="bg-gray-50">
+            <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">
                   S.N
@@ -147,12 +147,12 @@ export default function AdminProjectsPage() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[300px]">
                   Description
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-24 sticky right-0 bg-gray-50">
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-24 sticky right-0 bg-gray-50 dark:bg-gray-700">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-800">
               {filteredProjects.map((project, index) => (
                 <Fragment key={project.id}>
                   <tr>
@@ -184,7 +184,7 @@ export default function AdminProjectsPage() {
                     <td className="px-6 py-4">
                       <div className="line-clamp-2 max-w-[280px]">{project.description}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium sticky right-0 bg-white">
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium sticky right-0 bg-white dark:bg-gray-800">
                       <button
                         onClick={() => toggleRow(project.id)}
                         className="text-gray-600 hover:text-gray-800 mr-4"

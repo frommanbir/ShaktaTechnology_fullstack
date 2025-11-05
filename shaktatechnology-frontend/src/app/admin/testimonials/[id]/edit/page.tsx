@@ -51,15 +51,22 @@ export default function EditTestimonialPage() {
     }
   };
 
-  if (fetchLoading) return <div className="flex justify-center p-8">Loading...</div>;
-  if (error && !testimonial) return <div className="text-red-500 p-4">{error}</div>;
+  if (fetchLoading) 
+    return <div className="flex justify-center p-8 text-gray-700 dark:text-gray-200">Loading...</div>;
+
+  if (error && !testimonial) 
+    return (
+      <div className="text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-700 px-4 py-3 rounded m-4">
+        {error}
+      </div>
+    );
 
   return (
-    <div className="p-6 max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">Edit Testimonial</h1>
+    <div className="min-h-screen p-6 max-w-2xl mx-auto bg-gray-50 dark:bg-gray-900">
+      <h1 className="text-2xl font-bold mb-6 text-gray-900 dark:text-gray-100">Edit Testimonial</h1>
       
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+        <div className="bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-200 px-4 py-3 rounded mb-4">
           {error}
         </div>
       )}

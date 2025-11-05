@@ -29,13 +29,15 @@ export default async function NewsPage() {
   const recent = newsList.filter((n) => !n.featured);
 
   return (
-    <div className="bg-gray-50 min-h-screen">
-
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
+      {/* Hero / Heading */}
       <Heading />
+
       {/* Featured Stories */}
       <section className="px-6 lg:px-20 py-14">
-        <h2 className="text-3xl font-bold mb-10">
-          Featured <span className="text-purple-600">Stories</span>
+        <h2 className="text-3xl font-bold mb-10 text-center md:text-left">
+          Featured{" "}
+          <span className="text-purple-600 dark:text-purple-400">Stories</span>
         </h2>
 
         {featured.length > 0 ? (
@@ -45,14 +47,17 @@ export default async function NewsPage() {
             ))}
           </div>
         ) : (
-          <p className="text-gray-500 text-center">No featured stories available.</p>
+          <p className="text-gray-500 dark:text-gray-400 text-center">
+            No featured stories available.
+          </p>
         )}
       </section>
 
       {/* Recent Updates */}
-      <section className="px-6 lg:px-20 py-14">
-        <h2 className="text-3xl font-bold mb-10">
-          Recent <span className="text-purple-600">Updates</span>
+      <section className="px-6 lg:px-20 py-14 bg-gray-100 dark:bg-gray-800 transition-colors duration-300">
+        <h2 className="text-3xl font-bold mb-10 text-center md:text-left">
+          Recent{" "}
+          <span className="text-purple-600 dark:text-purple-400">Updates</span>
         </h2>
 
         {recent.length > 0 ? (
@@ -62,24 +67,33 @@ export default async function NewsPage() {
             ))}
           </div>
         ) : (
-          <p className="text-gray-500 text-center">No recent news found.</p>
+          <p className="text-gray-500 dark:text-gray-400 text-center">
+            No recent news found.
+          </p>
         )}
       </section>
 
-      {/* Footer Newsletter */}
-      <footer className="bg-white py-16 border-t text-center mt-auto">
-        <h3 className="text-2xl font-bold mb-4">Stay in the Loop</h3>
-        <div className="flex justify-center gap-2">
+      {/* Newsletter Section */}
+      <footer className="bg-white dark:bg-gray-800 py-16 border-t border-gray-200 dark:border-gray-700 text-center transition-colors duration-300">
+        <h3 className="text-2xl font-bold mb-4">
+          Stay in the{" "}
+          <span className="text-purple-600 dark:text-purple-400">Loop</span>
+        </h3>
+
+        <p className="text-gray-600 dark:text-gray-400 mb-6">
+          Subscribe to receive the latest tech stories and updates.
+        </p>
+
+        <div className="flex justify-center gap-3 flex-wrap">
           <input
             type="email"
             placeholder="Enter your email address"
-            className="px-4 py-2 border rounded-full w-64 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-full w-64 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-gray-100"
           />
-          <button className="px-5 py-2 bg-purple-600 text-white rounded-full hover:bg-purple-700 transition">
+          <button className="px-5 py-2 bg-purple-600 text-white rounded-full hover:bg-purple-700 dark:hover:bg-purple-500 transition-colors duration-300">
             Subscribe
           </button>
         </div>
-
       </footer>
     </div>
   );

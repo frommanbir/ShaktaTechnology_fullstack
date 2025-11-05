@@ -22,8 +22,8 @@ interface NewsCardProps {
 export default function NewsCard({ news, featured = false }: NewsCardProps) {
   return (
     <div
-      className={`overflow-hidden rounded-2xl shadow-sm bg-white hover:shadow-md hover:-translate-y-1 transition-all duration-300 ${
-        featured ? "border border-purple-200" : ""
+      className={`overflow-hidden rounded-2xl shadow-sm bg-white dark:bg-gray-800 hover:shadow-md hover:-translate-y-1 transition-all duration-300 ${
+        featured ? "border border-purple-200 dark:border-purple-700" : "border border-transparent"
       }`}
     >
       {/* Image Section */}
@@ -36,7 +36,7 @@ export default function NewsCard({ news, featured = false }: NewsCardProps) {
             className="object-cover transition-transform duration-500 hover:scale-105"
           />
         ) : (
-          <div className="bg-gray-100 w-full h-full flex items-center justify-center text-gray-400 text-sm">
+          <div className="bg-gray-100 dark:bg-gray-700 w-full h-full flex items-center justify-center text-gray-400 dark:text-gray-300 text-sm">
             No Image
           </div>
         )}
@@ -52,9 +52,9 @@ export default function NewsCard({ news, featured = false }: NewsCardProps) {
       {/* Content Section */}
       <div className="p-5">
         {/* Category + Date + Read time + Author */}
-        <div className="flex flex-wrap items-center gap-3 text-gray-500 text-xs mb-3">
+        <div className="flex flex-wrap items-center gap-3 text-gray-500 dark:text-gray-300 text-xs mb-3">
           {news.category && (
-            <span className="font-medium text-purple-600">{news.category}</span>
+            <span className="font-medium text-purple-600 dark:text-purple-400">{news.category}</span>
           )}
           {news.date && (
             <span className="flex items-center gap-1">
@@ -78,7 +78,7 @@ export default function NewsCard({ news, featured = false }: NewsCardProps) {
 
         {/* Title */}
         <h3
-          className={`font-semibold text-gray-900 ${
+          className={`font-semibold text-gray-900 dark:text-white ${
             featured ? "text-lg md:text-xl" : "text-base md:text-lg"
           } line-clamp-2`}
         >
@@ -88,9 +88,9 @@ export default function NewsCard({ news, featured = false }: NewsCardProps) {
         {/* Description */}
         {news.description && (
           <p
-            className={`text-gray-600 mt-2 ${
+            className={`mt-2 ${
               featured ? "text-sm md:text-base line-clamp-3" : "text-sm line-clamp-2"
-            }`}
+            } text-gray-600 dark:text-gray-300`}
           >
             {news.description}
           </p>
@@ -100,7 +100,7 @@ export default function NewsCard({ news, featured = false }: NewsCardProps) {
         <div className="mt-5">
           <Link
             href={`/news/${news.id}`}
-            className="inline-flex items-center gap-1 text-purple-600 font-medium text-sm hover:gap-2 transition-all"
+            className="inline-flex items-center gap-1 text-purple-600 dark:text-purple-400 font-medium text-sm hover:gap-2 transition-all"
           >
             Read More →
           </Link>

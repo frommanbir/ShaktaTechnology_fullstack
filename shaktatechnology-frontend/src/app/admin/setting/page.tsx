@@ -3,7 +3,7 @@
 import { useState, useEffect, Fragment } from "react";
 import { getSettings, createSettings, updateSettings, deleteSettings } from "@/lib/api";
 import { Dialog, Transition } from "@headlessui/react";
-import { Loader2, Linkedin, Facebook, Instagram, Twitter } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
@@ -46,7 +46,7 @@ export default function AdminSettingsPage() {
   const storageUrl = process.env.NEXT_PUBLIC_STORAGE_URL || "http://localhost:8000/storage/";
 
   useEffect(() => {
-    setError(""); // Clear any previous errors on mount
+    setError("");
     async function fetchSettings() {
       setLoading(true);
       try {
@@ -92,25 +92,21 @@ export default function AdminSettingsPage() {
     try {
       let newSettings: Setting;
       if (settings) {
-        // Update existing settings
         const response = await updateSettings(settings.id, formData);
         newSettings = response.data;
         setSettings(newSettings);
       } else {
-        // Create new settings
         const response = await createSettings(formData);
         newSettings = response.data;
         setSettings(newSettings);
       }
       setIsEditing(false);
-      
-      // Use newSettings to update formData (fixes async state issue)
       setFormData({
         company_name: newSettings.company_name || "",
         phone: newSettings.phone || "",
         email: newSettings.email || "",
         address: newSettings.address || "",
-        logo: null, // Reset file after upload
+        logo: null,
         website: newSettings.website || "",
         linkedin: newSettings.linkedin || "",
         instagram: newSettings.instagram || "",
@@ -153,148 +149,127 @@ export default function AdminSettingsPage() {
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">Settings</h1>
+    <div className="p-6 max-w-4xl mx-auto bg-gray-50 dark:bg-gray-900 min-h-screen">
+      <h1 className="text-2xl font-bold mb-6 text-gray-900 dark:text-gray-100">Settings</h1>
 
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+        <div className="bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 px-4 py-3 rounded mb-4">
           {error}
         </div>
       )}
 
       {loading ? (
         <div className="flex justify-center items-center h-64">
-          <Loader2 className="animate-spin h-12 w-12 text-blue-600" />
+          <Loader2 className="animate-spin h-12 w-12 text-blue-600 dark:text-blue-400" />
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 space-y-6">
+        <form
+          onSubmit={handleSubmit}
+          className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 space-y-6"
+        >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Company Name */}
             <div>
-              <label className="block text-gray-700 mb-2">Company Name *</label>
+              <label className="block text-gray-700 dark:text-gray-300 mb-2">Company Name *</label>
               <input
                 type="text"
                 name="company_name"
                 value={formData.company_name}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border rounded-md"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 required
                 disabled={!isEditing && settings !== null}
               />
             </div>
 
+            {/* Phone */}
             <div>
-              <label className="block text-gray-700 mb-2">Phone *</label>
+              <label className="block text-gray-700 dark:text-gray-300 mb-2">Phone *</label>
               <input
                 type="text"
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border rounded-md"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 required
                 disabled={!isEditing && settings !== null}
               />
             </div>
 
+            {/* Email */}
             <div>
-              <label className="block text-gray-700 mb-2">Email *</label>
+              <label className="block text-gray-700 dark:text-gray-300 mb-2">Email *</label>
               <input
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border rounded-md"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 required
                 disabled={!isEditing && settings !== null}
               />
             </div>
 
+            {/* Address */}
             <div>
-              <label className="block text-gray-700 mb-2">Address *</label>
+              <label className="block text-gray-700 dark:text-gray-300 mb-2">Address *</label>
               <input
                 type="text"
                 name="address"
                 value={formData.address}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border rounded-md"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 required
                 disabled={!isEditing && settings !== null}
               />
             </div>
 
+            {/* Website */}
             <div>
-              <label className="block text-gray-700 mb-2">Website</label>
+              <label className="block text-gray-700 dark:text-gray-300 mb-2">Website</label>
               <input
                 type="url"
                 name="website"
                 value={formData.website}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border rounded-md"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 disabled={!isEditing && settings !== null}
               />
             </div>
 
-            <div>
-              <label className="block text-gray-700 mb-2">LinkedIn</label>
-              <input
-                type="url"
-                name="linkedin"
-                value={formData.linkedin}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border rounded-md"
-                disabled={!isEditing && settings !== null}
-              />
-            </div>
+            {/* Social Links */}
+            {["linkedin", "instagram", "facebook", "twitter"].map((field) => (
+              <div key={field}>
+                <label className="block text-gray-700 dark:text-gray-300 mb-2 capitalize">{field}</label>
+                <input
+                  type="url" 
+                  name={field}
+                  value={(formData as any)[field]}
+                  onChange={handleChange} 
+                  placeholder={`https://www.${field}.com/yourprofile`}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  disabled={!isEditing && settings !== null}
+                />
+              </div>
+            ))}
 
-            <div>
-              <label className="block text-gray-700 mb-2">Instagram</label>
-              <input
-                type="url"
-                name="instagram"
-                value={formData.instagram}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border rounded-md"
-                disabled={!isEditing && settings !== null}
-              />
-            </div>
 
-            <div>
-              <label className="block text-gray-700 mb-2">Facebook</label>
-              <input
-                type="url"
-                name="facebook"
-                value={formData.facebook}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border rounded-md"
-                disabled={!isEditing && settings !== null}
-              />
-            </div>
-
-            <div>
-              <label className="block text-gray-700 mb-2">Twitter</label>
-              <input
-                type="url"
-                name="twitter"
-                value={formData.twitter}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border rounded-md"
-                disabled={!isEditing && settings !== null}
-              />
-            </div>
-
+            {/* About */}
             <div className="col-span-2">
-              <label className="block text-gray-700 mb-2">About</label>
+              <label className="block text-gray-700 dark:text-gray-300 mb-2">About</label>
               <textarea
                 name="about"
                 value={formData.about}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border rounded-md"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 rows={4}
                 disabled={!isEditing && settings !== null}
               />
             </div>
 
+            {/* Logo */}
             <div className="col-span-2">
-              <label className="block text-gray-700 mb-2">Logo</label>
+              <label className="block text-gray-700 dark:text-gray-300 mb-2">Logo</label>
               <div className="space-y-2">
                 {settings?.logo && (
                   <div className="mb-2">
@@ -303,40 +278,45 @@ export default function AdminSettingsPage() {
                       alt="Current Company Logo"
                       width={100}
                       height={100}
-                      className="object-contain border rounded"
+                      className="object-contain border rounded dark:invert dark:brightness-200"
                     />
-                    {isEditing && <p className="text-sm text-gray-500">Current logo (replace below if needed)</p>}
+                    {isEditing && (
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Current logo (replace below if needed)
+                      </p>
+                    )}
                   </div>
                 )}
                 <input
                   type="file"
                   name="logo"
                   onChange={handleFileChange}
-                  className="w-full px-3 py-2 border rounded-md"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                   accept="image/*"
                   disabled={!isEditing && settings !== null}
                 />
                 {formData.logo && isEditing && (
-                  <p className="text-sm text-green-600">New logo selected</p>
+                  <p className="text-sm text-green-600 dark:text-green-400">New logo selected</p>
                 )}
               </div>
             </div>
           </div>
 
+          {/* Action Buttons */}
           <div className="flex justify-end space-x-3">
             {settings && !isEditing ? (
               <>
                 <button
                   type="button"
                   onClick={() => setIsEditing(true)}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
                 >
                   Edit
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowDeleteModal(true)}
-                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600"
                 >
                   Delete
                 </button>
@@ -361,14 +341,14 @@ export default function AdminSettingsPage() {
                       about: settings?.about || "",
                     });
                   }}
-                  className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400"
+                  className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
                   disabled={loading}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 disabled:opacity-50"
                   disabled={loading}
                 >
                   {loading ? (
@@ -390,7 +370,11 @@ export default function AdminSettingsPage() {
 
       {/* Delete Confirmation Modal */}
       <Transition show={showDeleteModal} as={Fragment}>
-        <Dialog as="div" className="relative z-50" onClose={() => setShowDeleteModal(false)}>
+        <Dialog
+          as="div"
+          className="relative z-50"
+          onClose={() => setShowDeleteModal(false)}
+        >
           <Transition.Child
             as={Fragment}
             enter="ease-out duration-300"
@@ -413,34 +397,31 @@ export default function AdminSettingsPage() {
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="bg-white rounded-lg max-w-md w-full p-6">
-                <Dialog.Title className="text-xl font-bold mb-4 text-gray-800">
+              <Dialog.Panel className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
+                <Dialog.Title className="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100">
                   Confirm Deletion
                 </Dialog.Title>
-                <p className="text-gray-600 mb-6">
-                  Are you sure you want to delete the settings for{" "}
-                  <span className="font-semibold">{settings?.company_name}</span>? This action cannot be undone.
+                <p className="text-gray-600 dark:text-gray-300 mb-6">
+                  Are you sure you want to delete the settings for {settings?.company_name}? This action cannot be undone.
                 </p>
                 <div className="flex justify-end space-x-3">
                   <button
+                    type="button"
+                    className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
                     onClick={() => setShowDeleteModal(false)}
-                    className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300"
-                    disabled={isDeleting}
                   >
                     Cancel
                   </button>
                   <button
+                    type="button"
+                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 disabled:opacity-50"
                     onClick={handleDelete}
-                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center disabled:opacity-50"
                     disabled={isDeleting}
                   >
                     {isDeleting ? (
-                      <>
-                        <Loader2 className="animate-spin mr-2 h-4 w-4" />
-                        Deleting...
-                      </>
+                      <Loader2 className="animate-spin h-4 w-4 inline" />
                     ) : (
-                      "Delete Settings"
+                      "Delete"
                     )}
                   </button>
                 </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { getMembers } from "@/lib/api";
 import { Linkedin, Github, Facebook, Instagram } from "lucide-react";
 
@@ -54,38 +55,51 @@ export default function TeamPage() {
 
   if (loading) {
     return (
-      <section className="bg-slate-50 py-20 text-center">
-        <p className="text-gray-500 text-lg">Loading team members...</p>
+      <section className="bg-gray-900 py-20 text-center">
+        <p className="text-gray-300 text-lg animate-pulse">
+          Loading team members...
+        </p>
       </section>
     );
   }
 
   return (
-    <section className="bg-slate-50 py-20">
+    <section className="bg-gray-900 py-20 text-gray-100">
       <div className="max-w-7xl mx-auto px-6">
-        <div className="text-center mb-14">
-          <h2 className="text-4xl font-bold text-slate-900">Meet Our Team</h2>
-          <p className="mt-3 text-lg text-slate-600 max-w-2xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-14"
+        >
+          <h2 className="text-4xl font-bold">Meet Our Team</h2>
+          <p className="mt-3 text-lg text-gray-300 max-w-2xl mx-auto">
             Passionate minds powering innovation and excellence behind our organization.
           </p>
-        </div>
+        </motion.div>
 
         <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10">
-          {team.map((member) => (
-            <div
+          {team.map((member, i) => (
+            <motion.div
               key={member.id}
-              className="group bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden relative"
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.1, duration: 0.6, ease: "easeOut" }}
+              whileHover={{ scale: 1.04, y: -5 }}
+              className="group bg-gray-800/60 rounded-2xl shadow-md hover:shadow-indigo-500/20 border border-gray-700 hover:border-indigo-400 transition-all duration-300 overflow-hidden backdrop-blur-sm cursor-pointer"
             >
               {/* Image */}
               <div className="relative w-full h-60 overflow-hidden">
                 {member.image ? (
-                  <img
+                  <motion.img
                     src={member.image}
                     alt={member.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                   />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-100 flex items-center justify-center text-4xl font-semibold text-gray-600">
+                  <div className="w-full h-full bg-gray-700 flex items-center justify-center text-4xl font-semibold text-gray-300">
                     {member.name
                       .split(" ")
                       .map((n) => n[0])
@@ -94,13 +108,18 @@ export default function TeamPage() {
                 )}
 
                 {/* Overlay Socials */}
-                <div className="absolute inset-0 bg-black bg-opacity-60 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center space-x-4">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  whileHover={{ opacity: 1 }}
+                  transition={{ duration: 0.3 }}
+                  className="absolute inset-0 bg-black bg-opacity-60 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center space-x-4"
+                >
                   {member.linkedin && (
                     <a
                       href={member.linkedin}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-white hover:text-blue-400"
+                      className="text-white hover:text-blue-400 transition"
                     >
                       <Linkedin size={22} />
                     </a>
@@ -110,7 +129,7 @@ export default function TeamPage() {
                       href={member.github}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-white hover:text-gray-300"
+                      className="text-white hover:text-gray-300 transition"
                     >
                       <Github size={22} />
                     </a>
@@ -120,7 +139,7 @@ export default function TeamPage() {
                       href={member.facebook}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-white hover:text-blue-400"
+                      className="text-white hover:text-blue-400 transition"
                     >
                       <Facebook size={22} />
                     </a>
@@ -130,32 +149,30 @@ export default function TeamPage() {
                       href={member.instagram}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-white hover:text-pink-400"
+                      className="text-white hover:text-pink-400 transition"
                     >
                       <Instagram size={22} />
                     </a>
                   )}
-                </div>
+                </motion.div>
               </div>
 
               {/* Info */}
               <div className="p-5 text-center">
-                <h3 className="text-xl font-semibold text-slate-800 mb-1">
-                  {member.name}
-                </h3>
-                <p className="text-blue-600 text-sm font-medium">
+                <h3 className="text-xl font-semibold mb-1">{member.name}</h3>
+                <p className="text-indigo-400 text-sm font-medium">
                   {member.position || member.role}
                 </p>
                 {member.department && (
-                  <p className="text-gray-500 text-sm mt-1">{member.department}</p>
+                  <p className="text-gray-300 text-sm mt-1">{member.department}</p>
                 )}
                 {member.short_description && (
-                  <p className="mt-3 text-gray-600 text-sm leading-relaxed line-clamp-3">
+                  <p className="mt-3 text-gray-300 text-sm leading-relaxed line-clamp-3">
                     {member.short_description}
                   </p>
                 )}
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>

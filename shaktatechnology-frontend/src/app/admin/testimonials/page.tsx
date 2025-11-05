@@ -58,100 +58,96 @@ export default function TestimonialsPage() {
   if (loading)
     return (
       <div className="flex justify-center items-center p-8">
-        <Loader2 className="w-6 h-6 animate-spin text-indigo-500" />
+        <Loader2 className="w-6 h-6 animate-spin text-indigo-500 dark:text-indigo-400" />
       </div>
     );
 
   if (error)
-    return <div className="text-red-500 p-4 text-center">{error}</div>;
+    return (
+      <div className="text-red-500 dark:text-red-400 p-4 text-center">{error}</div>
+    );
 
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Testimonials</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Testimonials</h1>
         <Link
           href="/admin/testimonials/add"
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition"
         >
           Add Testimonial
         </Link>
       </div>
 
-      <div className="overflow-x-auto bg-white rounded-lg shadow">
-  <table className="min-w-full border-collapse">
-    <thead>
-      <tr className="bg-gray-100 text-left text-gray-700">
-        <th className="py-3 px-4 border-b">Image</th>
-        <th className="py-3 px-4 border-b">Name</th>
-        <th className="py-3 px-4 border-b">Role</th>
-        <th className="py-3 px-4 border-b">Testimonial</th>
-        <th className="py-3 px-4 border-b text-right">Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      {testimonials.map((testimonial) => (
-        <tr key={testimonial.id} className="hover:bg-gray-50">
-          <td className="py-3 px-4 border-b">
-            <div className="relative w-10 h-10">
-              <Image
-                src={
-                  testimonial.image
-                    ? testimonial.image.startsWith('http')
-                      ? testimonial.image
-                      : `${storageUrl}${testimonial.image}`
-                    : '/images/placeholder-avatar.jpg'
-                }
-                alt={testimonial.name}
-                fill
-                sizes="40px"
-                className="rounded-full object-cover"
-              />
-            </div>
-          </td>
-          <td className="py-3 px-4 border-b font-medium">{testimonial.name}</td>
-          <td className="py-3 px-4 border-b text-gray-600">{testimonial.role}</td>
-          <td className="py-3 px-4 border-b text-gray-700 max-w-md truncate">
-            {testimonial.text}
-          </td>
-          <td className="py-3 px-4 border-b text-right">
-            <Link
-              href={`/admin/testimonials/${testimonial.id}/edit`}
-              className="bg-yellow-500 text-white px-3 py-1 rounded text-sm hover:bg-yellow-600 mr-2"
-            >
-              Edit
-            </Link>
-            <button
-              onClick={() => handleDelete(testimonial.id)}
-              className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600"
-            >
-              Delete
-            </button>
-          </td>
-        </tr>
-      ))}
-    </tbody>
-  </table>
-</div>
-
-{testimonials.length === 0 && (
-  <div className="text-center py-8 text-gray-500">
-    No testimonials found.{' '}
-    <Link
-      href="/admin/testimonials/add"
-      className="text-blue-600 hover:underline"
-    >
-      Add the first one
-    </Link>
-  </div>
-)}
-
+      <div className="overflow-x-auto bg-white dark:bg-gray-800 rounded-lg shadow">
+        <table className="min-w-full border-collapse">
+          <thead>
+            <tr className="bg-gray-100 dark:bg-gray-700 text-left text-gray-700 dark:text-gray-300">
+              <th className="py-3 px-4 border-b">Image</th>
+              <th className="py-3 px-4 border-b">Name</th>
+              <th className="py-3 px-4 border-b">Role</th>
+              <th className="py-3 px-4 border-b">Testimonial</th>
+              <th className="py-3 px-4 border-b text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {testimonials.map((testimonial) => (
+              <tr
+                key={testimonial.id}
+                className="hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                <td className="py-3 px-4 border-b">
+                  <div className="relative w-10 h-10">
+                    <Image
+                      src={
+                        testimonial.image
+                          ? testimonial.image.startsWith('http')
+                            ? testimonial.image
+                            : `${storageUrl}${testimonial.image}`
+                          : '/images/placeholder-avatar.jpg'
+                      }
+                      alt={testimonial.name}
+                      fill
+                      sizes="40px"
+                      className="rounded-full object-cover"
+                    />
+                  </div>
+                </td>
+                <td className="py-3 px-4 border-b font-medium text-gray-900 dark:text-gray-100">
+                  {testimonial.name}
+                </td>
+                <td className="py-3 px-4 border-b text-gray-600 dark:text-gray-300">
+                  {testimonial.role}
+                </td>
+                <td className="py-3 px-4 border-b text-gray-700 dark:text-gray-200 max-w-md truncate">
+                  {testimonial.text}
+                </td>
+                <td className="py-3 px-4 border-b text-right">
+                  <Link
+                    href={`/admin/testimonials/${testimonial.id}/edit`}
+                    className="bg-yellow-500 text-white px-3 py-1 rounded text-sm hover:bg-yellow-600 dark:bg-yellow-400 dark:hover:bg-yellow-500 mr-2"
+                  >
+                    Edit
+                  </Link>
+                  <button
+                    onClick={() => handleDelete(testimonial.id)}
+                    className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600 dark:bg-red-500 dark:hover:bg-red-600"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       {testimonials.length === 0 && (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
           No testimonials found.{' '}
           <Link
             href="/admin/testimonials/add"
-            className="text-blue-600 hover:underline"
+            className="text-blue-600 hover:underline dark:text-blue-400"
           >
             Add the first one
           </Link>

@@ -65,7 +65,7 @@ class SettingController extends Controller
             $file = $request->file('logo');
             $extension = $file->getClientOriginalExtension( );
 
-            $filename = Str::slug($companyamNe) . '_logo' . $extension;
+            $filename = Str::slug($companyamNe) . '_logo.' . $extension;
 
             $logoPath = $file->storeAs('logos',$filename,'public');
             $data['logo'] = $logoPath;
@@ -104,7 +104,7 @@ class SettingController extends Controller
                 'phone' => 'sometimes|required|string|max:20',
                 'email' => 'sometimes|required|email|max:255',
                 'address' => 'sometimes|required|string',
-                'logo' => 'sometimes|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+                'logo' => 'sometimes|mimetypes:image/jpeg,image/png,image/jpg,image/gif,image/svg+xml|max:2048',
                 'website' => 'sometimes|nullable|url|max:255',
                 'linkedin' => 'sometimes|nullable|url|max:255',
                 'instagram' => 'sometimes|nullable|url|max:255',
