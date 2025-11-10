@@ -24,6 +24,9 @@ class SettingController extends Controller
                 ], 404);
             }
 
+            // Increment visits on each fetch
+            $settings->increment('visits');
+
             return response()->json($settings);
         } catch (Exception $e) {
             Log::error('Failed to fetch settings: ' . $e->getMessage());
@@ -34,59 +37,60 @@ class SettingController extends Controller
             ], 500);
         }
     }
+
     public function store(Request $request)
-{
-    try {
-        $validator = Validator::make($request->all(), [
-            'company_name' => 'required|string|max:255',
-            'phone' => 'required|string|max:20',
-            'email' => 'required|email|max:255',
-            'address' => 'required|string',
-            'logo' => 'sometimes|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'website' => 'nullable|url|max:255',
-            'linkedin' => 'nullable|url|max:255',
-            'instagram' => 'nullable|url|max:255',
-            'facebook' => 'nullable|url|max:255',
-            'twitter' => 'nullable|url|max:255',
-            'about' => 'nullable|string'
-        ]);
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'company_name' => 'required|string|max:255',
+                'phone' => 'required|string|max:20',
+                'email' => 'required|email|max:255',
+                'address' => 'required|string',
+                'logo' => 'sometimes|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+                'website' => 'nullable|url|max:255',
+                'linkedin' => 'nullable|url|max:255',
+                'instagram' => 'nullable|url|max:255',
+                'facebook' => 'nullable|url|max:255',
+                'twitter' => 'nullable|url|max:255',
+                'about' => 'nullable|string',
+                'visits' => 'sometimes|integer|min:0' // Allow initial visits
+            ]);
 
-        if ($validator->fails()) {
+            if ($validator->fails()) {
+                return response()->json([
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $data = $request->except('logo');
+
+            if ($request->hasFile('logo')) {
+                $companyName = $request->input('company_name');
+                $file = $request->file('logo');
+                $extension = $file->getClientOriginalExtension();
+
+                $filename = Str::slug($companyName) . '_logo.' . $extension;
+
+                $logoPath = $file->storeAs('logos', $filename, 'public');
+                $data['logo'] = $logoPath;
+            }
+
+            $setting = Setting::create($data);
+
             return response()->json([
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
+                'message' => 'Settings created successfully',
+                'data' => $setting
+            ], 201);
+        } catch (Exception $e) {
+            Log::error('Failed to create settings: ' . $e->getMessage());
+
+            return response()->json([
+                'message' => 'Failed to create settings',
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+            ], 500);
         }
-
-        $data = $request->except('logo');
-
-        if ($request->hasFile('logo')) {
-            $companyamNe = $request->input('company_name');
-            $file = $request->file('logo');
-            $extension = $file->getClientOriginalExtension( );
-
-            $filename = Str::slug($companyamNe) . '_logo.' . $extension;
-
-            $logoPath = $file->storeAs('logos',$filename,'public');
-            $data['logo'] = $logoPath;
-        }
-
-        $setting = Setting::create($data);
-
-        return response()->json([
-            'message' => 'Settings created successfully',
-            'data' => $setting
-        ], 201);
-
-    } catch (Exception $e) {
-        \Log::error('Failed to create settings: ' . $e->getMessage());
-        return response()->json([
-            'message' => 'Failed to create settings',
-            'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
-        ], 500);
     }
-}
-
 
     public function update(Request $request, $id)
     {
@@ -110,7 +114,8 @@ class SettingController extends Controller
                 'instagram' => 'sometimes|nullable|url|max:255',
                 'facebook' => 'sometimes|nullable|url|max:255',
                 'twitter' => 'sometimes|nullable|url|max:255',
-                'about' => 'sometimes|nullable|string'
+                'about' => 'sometimes|nullable|string',
+                'visits' => 'sometimes|integer|min:0' // Allow updating visits
             ]);
 
             if ($validator->fails()) {
@@ -127,13 +132,12 @@ class SettingController extends Controller
                 if ($settings->logo && Storage::exists($settings->logo)) {
                     Storage::delete($settings->logo);
                 }
-                $companyName = $request->input('company_name',$settings->company_name);
+                $companyName = $request->input('company_name', $settings->company_name);
                 $file = $request->file('logo');
                 $extension = $file->getClientOriginalExtension();
 
                 $fileName = Str::slug($companyName) . '_logo.' . $extension;
-
-                $logoPath = $file->storeAs('logos',$fileName,'public');
+                $logoPath = $file->storeAs('logos', $fileName, 'public');
                 $data['logo'] = $logoPath;
                 $hasChanges = true;
             }
@@ -158,7 +162,6 @@ class SettingController extends Controller
                 'message' => 'Settings updated successfully',
                 'data' => $settings
             ]);
-
         } catch (Exception $e) {
             Log::error('Failed to update settings: ' . $e->getMessage());
 
@@ -189,7 +192,6 @@ class SettingController extends Controller
             return response()->json([
                 'message' => 'Settings deleted successfully'
             ]);
-
         } catch (Exception $e) {
             Log::error('Failed to delete settings: ' . $e->getMessage());
 

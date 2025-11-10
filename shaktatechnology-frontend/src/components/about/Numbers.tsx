@@ -14,22 +14,25 @@ const stats = [
 
 export default function Numbers() {
   return (
-    <section className="bg-gray-900 py-20 font-poppins text-gray-100">
+    <section className="py-20 font-poppins bg-white dark:bg-gray-900 transition-colors duration-300">
       <div className="max-w-6xl mx-auto px-6 text-center">
         <motion.h2
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={{opacity:1, y:0}}
-        transition={{ duration:0.6}}
-        viewport={{ once:true}}
-        className="text-4xl font-bold mb-4 text-gray-100">
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          viewport={{ once: true }}
+          className="text-4xl font-bold mb-4 text-gray-800 dark:text-white"
+        >
           Our Journey in Numbers
         </motion.h2>
+
         <motion.p
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={{opacity:1, y:0}}
-        transition={{delay:0.2, duration: 0.6}}
-        viewport={{once:true}}
-        className="text-lg text-gray-300 mb-12">
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.6 }}
+          viewport={{ once: true }}
+          className="text-lg text-gray-700 dark:text-gray-300 mb-12"
+        >
           A decade of excellence, innovation, and client success
         </motion.p>
 
@@ -42,7 +45,6 @@ export default function Numbers() {
     </section>
   );
 }
-
 
 function AnimatedStat({
   value,
@@ -73,11 +75,16 @@ function AnimatedStat({
         visible: { opacity: 1, y: 0 },
       }}
       transition={{ delay, duration: 0.6 }}
-      whileHover={{ scale: 1.1 }}
-      className="group cursor-pointer p-4 rounded-xl bg-gray-800/50 hover:bg-gray-800 border border-gray-700 hover:border-indigo-400 transition-all duration-300 shadow-sm hover:shadow-indigo-500/20"
+      whileHover={{ scale: 1.08 }}
+      className="group cursor-pointer p-4 rounded-xl 
+                 bg-gray-100 dark:bg-gray-800 
+                 hover:bg-gray-200 dark:hover:bg-gray-700 
+                 border border-gray-300 dark:border-gray-700 
+                 hover:border-indigo-400 transition-all duration-300 
+                 shadow-sm hover:shadow-indigo-500/20"
     >
       <CountUp target={value} suffix={suffix} />
-      <p className="mt-2 text-gray-300 font-medium group-hover:text-gray-100 transition-colors">
+      <p className="mt-2 text-gray-700 dark:text-gray-300 font-medium group-hover:text-gray-900 dark:group-hover:text-gray-100 transition-colors">
         {label}
       </p>
     </motion.div>
@@ -106,9 +113,8 @@ function CountUp({ target, suffix }: { target: number; suffix?: string }) {
   }, [target, suffix]);
 
   return (
-    <p className="text-4xl font-extrabold text-indigo-400">
+    <p className="text-4xl font-extrabold text-indigo-500 dark:text-indigo-400">
       <span ref={ref}>0</span>
     </p>
   );
 }
-

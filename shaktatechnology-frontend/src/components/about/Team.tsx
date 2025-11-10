@@ -55,8 +55,8 @@ export default function TeamPage() {
 
   if (loading) {
     return (
-      <section className="bg-gray-900 py-20 text-center">
-        <p className="text-gray-300 text-lg animate-pulse">
+      <section className="bg-white dark:bg-gray-900 py-20 text-center transition-colors duration-300">
+        <p className="text-gray-700 dark:text-gray-300 text-lg animate-pulse">
           Loading team members...
         </p>
       </section>
@@ -64,8 +64,9 @@ export default function TeamPage() {
   }
 
   return (
-    <section className="bg-gray-900 py-20 text-gray-100">
+    <section className="bg-white dark:bg-gray-900 py-20 text-gray-800 dark:text-gray-100 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-6">
+        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -73,12 +74,15 @@ export default function TeamPage() {
           transition={{ duration: 0.6 }}
           className="text-center mb-14"
         >
-          <h2 className="text-4xl font-bold">Meet Our Team</h2>
-          <p className="mt-3 text-lg text-gray-300 max-w-2xl mx-auto">
+          <h2 className="text-4xl font-bold text-gray-800 dark:text-white">
+            Meet Our Team
+          </h2>
+          <p className="mt-3 text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
             Passionate minds powering innovation and excellence behind our organization.
           </p>
         </motion.div>
 
+        {/* Team Grid */}
         <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10">
           {team.map((member, i) => (
             <motion.div
@@ -88,7 +92,13 @@ export default function TeamPage() {
               viewport={{ once: true }}
               transition={{ delay: i * 0.1, duration: 0.6, ease: "easeOut" }}
               whileHover={{ scale: 1.04, y: -5 }}
-              className="group bg-gray-800/60 rounded-2xl shadow-md hover:shadow-indigo-500/20 border border-gray-700 hover:border-indigo-400 transition-all duration-300 overflow-hidden backdrop-blur-sm cursor-pointer"
+              className="group bg-gray-100 dark:bg-gray-800/60 
+                         rounded-2xl shadow-md 
+                         hover:shadow-indigo-500/20 
+                         border border-gray-300 dark:border-gray-700 
+                         hover:border-indigo-400 
+                         transition-all duration-300 
+                         overflow-hidden backdrop-blur-sm cursor-pointer"
             >
               {/* Image */}
               <div className="relative w-full h-60 overflow-hidden">
@@ -99,7 +109,7 @@ export default function TeamPage() {
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                   />
                 ) : (
-                  <div className="w-full h-full bg-gray-700 flex items-center justify-center text-4xl font-semibold text-gray-300">
+                  <div className="w-full h-full bg-gray-300 dark:bg-gray-700 flex items-center justify-center text-4xl font-semibold text-gray-600 dark:text-gray-300">
                     {member.name
                       .split(" ")
                       .map((n) => n[0])
@@ -112,7 +122,7 @@ export default function TeamPage() {
                   initial={{ opacity: 0 }}
                   whileHover={{ opacity: 1 }}
                   transition={{ duration: 0.3 }}
-                  className="absolute inset-0 bg-black bg-opacity-60 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center space-x-4"
+                  className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center space-x-4"
                 >
                   {member.linkedin && (
                     <a
@@ -159,15 +169,19 @@ export default function TeamPage() {
 
               {/* Info */}
               <div className="p-5 text-center">
-                <h3 className="text-xl font-semibold mb-1">{member.name}</h3>
-                <p className="text-indigo-400 text-sm font-medium">
+                <h3 className="text-xl font-semibold mb-1 text-gray-800 dark:text-white">
+                  {member.name}
+                </h3>
+                <p className="text-indigo-600 dark:text-indigo-400 text-sm font-medium">
                   {member.position || member.role}
                 </p>
                 {member.department && (
-                  <p className="text-gray-300 text-sm mt-1">{member.department}</p>
+                  <p className="text-gray-600 dark:text-gray-300 text-sm mt-1">
+                    {member.department}
+                  </p>
                 )}
                 {member.short_description && (
-                  <p className="mt-3 text-gray-300 text-sm leading-relaxed line-clamp-3">
+                  <p className="mt-3 text-gray-700 dark:text-gray-300 text-sm leading-relaxed line-clamp-3">
                     {member.short_description}
                   </p>
                 )}

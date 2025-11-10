@@ -49,10 +49,6 @@ Route::get('/news/{id}',[NewsController::class, 'show']);
 
 route::get('/testimonials', [TestimonialController::class, 'index']);
 route::get('/testimonials/{id}', [TestimonialController::class, 'show']);
-
-Route::get('/track-visit', [VisitController::class, 'count']);
-Route::post('/track-visit', [VisitController::class, 'track']);
-
 // Routes protected by Sanctum
 Route::middleware('auth:sanctum')->group(function () {
     // Logout

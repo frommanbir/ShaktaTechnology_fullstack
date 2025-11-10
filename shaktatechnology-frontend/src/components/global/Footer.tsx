@@ -13,7 +13,7 @@ import {
   Linkedin,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { trackVisit, getVisitCount, getSettings } from "@/lib/api";
+import { trackVisit, getSettings } from "@/lib/api";
 
 const SOCIAL_ICONS: Record<string, any> = {
   twitter: Twitter,
@@ -32,20 +32,30 @@ export default function Footer() {
   };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const page = window.location.pathname;
-        await trackVisit(page);
-        const total = await getVisitCount();
-        setVisitCount(total);
-        const settingsData = await getSettings();
-        setSettings(settingsData);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
-    };
-    fetchData();
+  const fetchData = async () => {
+    try {
+      // Only increment once per browser session (not per refresh)
+      const sessionKey = "shakta_visit_tracked";
+      const visited = sessionStorage.getItem(sessionKey);
 
+      if (!visited) {
+        await trackVisit(window.location.pathname);
+        sessionStorage.setItem(sessionKey, "true");
+      }
+
+      const data = await getSettings();
+      setSettings(data);
+      setVisitCount(Number(data.visits) || 0);
+    } catch (err) {
+      console.error("Error fetching settings:", err);
+    }
+  };
+
+  fetchData();
+}, []);
+
+  // Scroll listener for "back to top" button
+  useEffect(() => {
     const handleScroll = () => setShowButton(window.scrollY > 300);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
@@ -63,16 +73,12 @@ export default function Footer() {
         <div className="max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Company Info */}
           <div>
-            <motion.h2
-              whileHover={{ scale: 1.05 }}
-              className="text-xl font-bold cursor-default"
-            >
+            <motion.h2 whileHover={{ scale: 1.05 }} className="text-xl font-bold cursor-default">
               <span className="text-purple-600 dark:text-purple-400">Shakta</span>
               <span className="text-gray-900 dark:text-white">Technology</span>
             </motion.h2>
             <p className="mt-4 text-gray-600 dark:text-gray-400">
-              Empowering businesses with cutting-edge software solutions and
-              digital transformation services.
+              Empowering businesses with cutting-edge software solutions and digital transformation services.
             </p>
 
             {/* Dynamic Social Links */}
@@ -98,19 +104,11 @@ export default function Footer() {
           </div>
 
           {/* Navigation */}
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-          >
+          <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
             <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Navigation</h3>
             <ul className="space-y-2 text-gray-600 dark:text-gray-400">
               {["services", "projects", "about", "careers", "faqs"].map((link) => (
-                <motion.li
-                  key={link}
-                  whileHover={{ x: 6 }}
-                  transition={{ type: "spring", stiffness: 300 }}
-                >
+                <motion.li key={link} whileHover={{ x: 6 }} transition={{ type: "spring", stiffness: 300 }}>
                   <a
                     href={`/${link}`}
                     className="hover:text-purple-500 dark:hover:text-purple-400 transition-colors"
@@ -123,28 +121,12 @@ export default function Footer() {
           </motion.div>
 
           {/* Services */}
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
+          <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
             <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Services</h3>
             <ul className="space-y-2 text-gray-600 dark:text-gray-400">
-              {[
-                "Web Development",
-                "Mobile Apps",
-                "Cloud Solutions",
-                "Digital Transformation",
-              ].map((service) => (
-                <motion.li
-                  key={service}
-                  whileHover={{ x: 6 }}
-                  transition={{ type: "spring", stiffness: 300 }}
-                >
-                  <a
-                    href="/services"
-                    className="hover:text-purple-500 dark:hover:text-purple-400 transition-colors"
-                  >
+              {["Web Development", "Mobile Apps", "Cloud Solutions", "Digital Transformation"].map((service) => (
+                <motion.li key={service} whileHover={{ x: 6 }} transition={{ type: "spring", stiffness: 300 }}>
+                  <a href="/services" className="hover:text-purple-500 dark:hover:text-purple-400 transition-colors">
                     {service}
                   </a>
                 </motion.li>
@@ -153,14 +135,8 @@ export default function Footer() {
           </motion.div>
 
           {/* Contact Info */}
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
-              Contact Info
-            </h3>
+          <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Contact Info</h3>
             <ul className="space-y-3 text-gray-600 dark:text-gray-400">
               <li className="flex items-center gap-2">
                 <Mail size={18} className="text-purple-500 dark:text-purple-400" />
@@ -178,9 +154,7 @@ export default function Footer() {
 
             <div className="mt-3 flex items-center text-purple-600 dark:text-purple-400">
               <Eye size={16} className="mr-1" />
-              <span className="text-lg">
-                {visitCount !== null ? `${visitCount} visits` : "Loading..."}
-              </span>
+              <span className="text-lg">{visitCount !== null ? `${visitCount} visits` : "Loading..."}</span>
             </div>
           </motion.div>
         </div>

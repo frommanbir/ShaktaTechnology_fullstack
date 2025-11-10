@@ -13,12 +13,8 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('visits', function (Blueprint $table) {
-            $table->id();
-            $table->string('page')->nullable();
-            $table->string('ip_address')->nullable();
-            $table->unsignedBigInteger('count')->default(1); 
-            $table->timestamps();
+        Schema::table('settings', function (Blueprint $table) {
+            $table->integer('visits')->default(0);
         });
     }
 
@@ -29,6 +25,8 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('visits');
+        Schema::table('settings', function (Blueprint $table) {
+             $table->dropColumn('visits');
+        });
     }
 };

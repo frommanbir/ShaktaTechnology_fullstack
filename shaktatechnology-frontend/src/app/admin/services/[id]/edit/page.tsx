@@ -188,7 +188,7 @@ export default function EditServicePage() {
             </div>
 
             {/* Price */}
-            <div>
+            {/* <div>
               <label htmlFor="price" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                 Price
               </label>
@@ -201,7 +201,7 @@ export default function EditServicePage() {
                 className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 placeholder="e.g., $999, Contact for pricing"
               />
-            </div>
+            </div> */}
 
             {/* Features */}
             <div>

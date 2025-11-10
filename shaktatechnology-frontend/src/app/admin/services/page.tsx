@@ -10,7 +10,7 @@ import { useToast } from "@/components/Toast";
 interface Service {
   id: number;
   title: string;
-  price?: string;
+  // price?: string;
   description: string;
   features?: string[];
   technologies?: string[];
@@ -96,7 +96,7 @@ export default function AdminServicesPage() {
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <thead className="bg-gray-50 dark:bg-gray-700">
                 <tr>
-                  {["Title", "Description", "Price", "Features/Tech", "Actions"].map((col) => (
+                  {["Title", "Description", "Features/Tech", "Actions"].map((col) => (
                     <th
                       key={col}
                       className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
@@ -111,7 +111,7 @@ export default function AdminServicesPage() {
                   <tr key={service.id}>
                     <td className="px-6 py-4 break-words max-w-xs text-gray-900 dark:text-gray-100">{service.title}</td>
                     <td className="px-6 py-4 break-words max-w-md text-gray-800 dark:text-gray-200">{service.description || "N/A"}</td>
-                    <td className="px-6 py-4 break-words max-w-xs text-gray-800 dark:text-gray-200">{service.price || "N/A"}</td>
+                    {/* <td className="px-6 py-4 break-words max-w-xs text-gray-800 dark:text-gray-200">{service.price || "N/A"}</td> */}
                     <td className="px-6 py-4 break-words max-w-xs text-sm text-gray-700 dark:text-gray-300">
                       {(service.features?.slice(0, 2).join(", ") || "") +
                         (service.technologies?.length ? ` | ${service.technologies.slice(0, 2).join(", ")}` : "") ||

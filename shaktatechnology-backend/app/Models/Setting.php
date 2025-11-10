@@ -19,6 +19,7 @@ class Setting extends Model
         'instagram',
         'facebook',
         'twitter',
-        'about'
+        'about',
+        'visits'
      ];
 }
