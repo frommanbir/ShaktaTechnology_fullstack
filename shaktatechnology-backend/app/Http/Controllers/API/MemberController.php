@@ -4,29 +4,25 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\Member;
+use App\Helpers\CloudinaryHelper;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
 class MemberController extends Controller
 {
-    // pagination
+    // INDEX (Pagination)
     public function index(Request $request): JsonResponse
     {
         try {
-            $page = $request->input("page", 1);
-            $limit = $request->input("limit", 10);
-
-            if ($page < 1) $page = 1;
-            if ($limit < 1) $limit = 10;
-            if ($limit > 100) $limit = 100;
+            $page = max(1, (int) $request->input("page", 1));
+            $limit = min(100, max(1, (int) $request->input("limit", 10)));
 
             $total = Member::count();
-            $members = Member::skip(($page - 1) * $limit)
-                ->take($limit)
-                ->get();
+
+            $members = Member::skip(($page - 1) * $limit)->take($limit)->get();
+
             if ($members->isEmpty()) {
                 return response()->json([
                     'success' => true,
@@ -35,17 +31,17 @@ class MemberController extends Controller
                     'total' => 0,
                     'current_page' => $page,
                     'total_pages' => 0
-                ], 200);
+                ]);
             }
 
             return response()->json([
                 'success' => true,
                 'data' => $members,
                 'total' => $total,
-                'current_page' => (int)$page,
-                'per_page' => (int)$limit,
+                'current_page' => $page,
+                'per_page' => $limit,
                 'total_pages' => ceil($total / $limit)
-            ], 200);
+            ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -55,9 +51,7 @@ class MemberController extends Controller
         }
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+    // STORE MEMBER
     public function store(Request $request): JsonResponse
     {
         try {
@@ -70,7 +64,7 @@ class MemberController extends Controller
                 'role' => 'nullable|string|max:255',
                 'experience' => 'nullable|string',
                 'projects_involved' => 'nullable|string',
-                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+                'image' => 'nullable|image|max:4096',
                 'about' => 'nullable|string',
                 'linkedin' => 'nullable|url|max:255',
                 'facebook' => 'nullable|url|max:255',
@@ -93,14 +87,9 @@ class MemberController extends Controller
 
             $data = $request->all();
 
+            // Upload to Cloudinary
             if ($request->hasFile('image')) {
-                $image = $request->file('image');
-                $name = $request->input('name');
-                $extension = $image->getClientOriginalExtension();
-
-                $imageName = Str::slug($name) . '.' . $extension;
-                $image->storeAs('public/members', $imageName);
-                $data['image'] = $imageName;
+                $data['image'] = CloudinaryHelper::uploadImage($request->file('image'), 'members');
             }
 
             $member = Member::create($data);
@@ -109,6 +98,7 @@ class MemberController extends Controller
                 'success' => true,
                 'data' => $member
             ], 201);
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -118,9 +108,7 @@ class MemberController extends Controller
         }
     }
 
-    /**
-     * Display the specified resource.
-     */
+    // SHOW MEMBER
     public function show($id): JsonResponse
     {
         try {
@@ -136,7 +124,7 @@ class MemberController extends Controller
             return response()->json([
                 'success' => true,
                 'data' => $member
-            ], 200);
+            ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -146,9 +134,7 @@ class MemberController extends Controller
         }
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
+    // UPDATE MEMBER
     public function update(Request $request, $id): JsonResponse
     {
         try {
@@ -170,7 +156,7 @@ class MemberController extends Controller
                 'role' => 'nullable|string|max:255',
                 'experience' => 'nullable|string',
                 'projects_involved' => 'nullable|string',
-                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+                'image' => 'nullable|image|max:4096',
                 'about' => 'nullable|string',
                 'linkedin' => 'nullable|url|max:255',
                 'facebook' => 'nullable|url|max:255',
@@ -193,38 +179,24 @@ class MemberController extends Controller
 
             $data = $request->all();
 
+            // 🔥 Replace image in Cloudinary
             if ($request->hasFile('image')) {
-                $image = $request->file('image');
-                $name = $request->input('name', $member->name);
-                $extension = $image->getClientOriginalExtension();
-
-                $imageName = Str::slug($name) . '.' . $extension;
-
-                if ($member->image && $member->image != $imageName && Storage::exists('public/members/' . $member->image)) {
-                    Storage::delete('public/members/' . $member->image);
+                // delete old image
+                if ($member->image) {
+                    CloudinaryHelper::deleteImage($member->image);
                 }
-                $image->storeAs('public/members', $imageName);
-                $data['image'] = $imageName;
-            } else {
-                unset($data['image']);
+                // upload new image
+                $data['image'] = CloudinaryHelper::uploadImage($request->file('image'), 'members');
             }
 
-            $member->fill($data);
-
-            if (!$member->isDirty()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No changes made'
-                ], 200);
-            }
-
-            $member->save();
+            $member->update($data);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Member updated successfully',
                 'data' => $member
-            ], 200);
+            ]);
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -234,9 +206,7 @@ class MemberController extends Controller
         }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
+    // DELETE MEMBER
     public function destroy($id): JsonResponse
     {
         try {
@@ -249,8 +219,8 @@ class MemberController extends Controller
                 ], 404);
             }
 
-            if ($member->image && Storage::exists('public/members/' . $member->image)) {
-                Storage::delete('public/members/' . $member->image);
+            if ($member->image) {
+                CloudinaryHelper::deleteImage($member->image);
             }
 
             $member->delete();
@@ -258,7 +228,8 @@ class MemberController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Member deleted successfully'
-            ], 200);
+            ]);
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

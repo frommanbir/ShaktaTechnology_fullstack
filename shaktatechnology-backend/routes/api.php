@@ -47,8 +47,8 @@ Route::get('/galleries/{id}',[GalleryController::class, 'show']);
 Route::get('/news',[NewsController::class, 'index']);
 Route::get('/news/{id}',[NewsController::class, 'show']);
 
-route::get('/testimonials', [TestimonialController::class, 'index']);
-route::get('/testimonials/{id}', [TestimonialController::class, 'show']);
+Route::get('/testimonials', [TestimonialController::class, 'index']);
+Route::get('/testimonials/{id}', [TestimonialController::class, 'show']);
 // Routes protected by Sanctum
 Route::middleware('auth:sanctum')->group(function () {
     // Logout

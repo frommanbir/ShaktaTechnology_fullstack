@@ -5,32 +5,30 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use App\Models\News;
+use App\Helpers\CloudinaryHelper;
 
 class NewsController extends Controller
 {
     /**
-     * Format full image URL for API response.
+     * Fix image URL for local old images or Cloudinary absolute URLs.
      */
     private function formatImageUrl(?string $path): ?string
     {
         if (!$path) return null;
 
-        $path = ltrim($path, '/');
-
-        // If already full URL, return as-is
+        // Cloudinary URLs are already absolute
         if (str_starts_with($path, 'http')) {
             return $path;
         }
 
-        // Return absolute public URL
-        return asset('storage/' . $path);
+        // Old local stored images fallback
+        return asset('storage/' . ltrim($path, '/'));
     }
 
     /**
-     * Display a paginated listing of news articles.
+     * List paginated news.
      */
     public function index(Request $request): JsonResponse
     {
@@ -38,16 +36,17 @@ class NewsController extends Controller
             $limit = $request->input('limit', 10);
             $news = News::orderBy('created_at', 'desc')->paginate($limit);
 
-            // Transform image URLs
-            $news->getCollection()->transform(function ($item) {
+            $items = $news->items();
+
+            // Fix image URLs
+            foreach ($items as $item) {
                 $item->image = $this->formatImageUrl($item->image);
-                return $item;
-            });
+            }
 
             return response()->json([
                 'success' => true,
                 'message' => 'News fetched successfully',
-                'data' => $news->items(),
+                'data' => $items,
                 'pagination' => [
                     'total' => $news->total(),
                     'per_page' => $news->perPage(),
@@ -55,6 +54,7 @@ class NewsController extends Controller
                     'last_page' => $news->lastPage(),
                 ],
             ]);
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -65,7 +65,7 @@ class NewsController extends Controller
     }
 
     /**
-     * Store a newly created news article.
+     * Create news.
      */
     public function store(Request $request): JsonResponse
     {
@@ -90,8 +90,9 @@ class NewsController extends Controller
         try {
             $data = $request->except('image');
 
+            // Upload Cloudinary image
             if ($request->hasFile('image')) {
-                $data['image'] = $request->file('image')->store('news', 'public');
+                $data['image'] = CloudinaryHelper::uploadImage($request->file('image'), 'news');
             }
 
             $news = News::create($data);
@@ -103,6 +104,7 @@ class NewsController extends Controller
                 'message' => 'News article created successfully',
                 'data'    => $news,
             ], 201);
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -113,7 +115,7 @@ class NewsController extends Controller
     }
 
     /**
-     * Display a specific news article.
+     * Show single news.
      */
     public function show($id): JsonResponse
     {
@@ -125,6 +127,7 @@ class NewsController extends Controller
                 'success' => true,
                 'data'    => $news,
             ]);
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -135,7 +138,7 @@ class NewsController extends Controller
     }
 
     /**
-     * Update an existing news article.
+     * Update news.
      */
     public function update(Request $request, $id): JsonResponse
     {
@@ -162,13 +165,13 @@ class NewsController extends Controller
 
             $data = $request->except('image');
 
+            // Handle image replacement
             if ($request->hasFile('image')) {
-                // Delete old image safely
-                if ($news->image && Storage::disk('public')->exists($news->getRawOriginal('image'))) {
-                    Storage::disk('public')->delete($news->getRawOriginal('image'));
+                if ($news->image) {
+                    CloudinaryHelper::deleteImage($news->image);
                 }
 
-                $data['image'] = $request->file('image')->store('news', 'public');
+                $data['image'] = CloudinaryHelper::uploadImage($request->file('image'), 'news');
             }
 
             $news->update($data);
@@ -180,6 +183,7 @@ class NewsController extends Controller
                 'message' => 'News updated successfully',
                 'data'    => $news,
             ]);
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -190,15 +194,16 @@ class NewsController extends Controller
     }
 
     /**
-     * Remove the specified news article.
+     * Delete news.
      */
     public function destroy($id): JsonResponse
     {
         try {
             $news = News::findOrFail($id);
 
-            if ($news->image && Storage::disk('public')->exists($news->getRawOriginal('image'))) {
-                Storage::disk('public')->delete($news->getRawOriginal('image'));
+            // Delete cloudinary image
+            if ($news->image) {
+                CloudinaryHelper::deleteImage($news->image);
             }
 
             $news->delete();
@@ -207,6 +212,7 @@ class NewsController extends Controller
                 'success' => true,
                 'message' => 'News deleted successfully',
             ]);
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

@@ -22,23 +22,19 @@ export default function UserProjects() {
   const storageUrl = process.env.NEXT_PUBLIC_STORAGE_URL;
 
   useEffect(() => {
-    async function fetchProjects() {
-      setLoading(true);
-      try {
-        const response = await getProjects();
-        const sortedProjects = (response.data || []).sort(
-          (a: Project, b: Project) =>
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        );
-        setProjects(sortedProjects.slice(0, 3));
-      } catch (err: any) {
-        setError(err.response?.data?.message || "Failed to fetch projects");
-      } finally {
-        setLoading(false);
-      }
+  const fetchProjects = async () => {
+    try {
+      const response = await getProjects();
+      console.log("API projects:", response.data); // <-- log the data
+      setProjects(response.data);
+    } catch (error) {
+      console.error("Failed to fetch projects:", error);
+    } finally {
+      setLoading(false);
     }
-    fetchProjects();
-  }, []);
+  };
+  fetchProjects();
+}, []);
 
   return (
     <section className="py-16 text-center transition-colors duration-300 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden">
@@ -104,7 +100,7 @@ export default function UserProjects() {
             >
               {project.image ? (
                 <Image
-                  src={`${storageUrl}projects/${project.image}`}
+                  src={`${project.image}`}
                   alt={project.title}
                   width={400}
                   height={200}

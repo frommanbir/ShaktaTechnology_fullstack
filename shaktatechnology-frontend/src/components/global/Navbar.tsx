@@ -84,7 +84,7 @@ export default function Navbar() {
             <Image
               src={
                 settings?.logo
-                  ? `${storageUrl}${settings.logo}`
+                  ? `${settings.logo}`
                   : "/logo/shaktalogo.svg"
               }
               alt={settings?.company_name || "Logo"}

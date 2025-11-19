@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Helpers\CloudinaryHelper;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -63,17 +64,19 @@ class SettingController extends Controller
                 ], 422);
             }
 
-            $data = $request->except('logo');
+            $data = $validator->validated();
 
             if ($request->hasFile('logo')) {
-                $companyName = $request->input('company_name');
-                $file = $request->file('logo');
-                $extension = $file->getClientOriginalExtension();
+                // $companyName = $request->input('company_name');
+                // $file = $request->file('logo');
+                // $extension = $file->getClientOriginalExtension();
 
-                $filename = Str::slug($companyName) . '_logo.' . $extension;
+                // $filename = Str::slug($companyName) . '_logo.' . $extension;
 
-                $logoPath = $file->storeAs('logos', $filename, 'public');
-                $data['logo'] = $logoPath;
+                // $logoPath = $file->storeAs('logos', $filename, 'public');
+                // $data['logo'] = $logoPath;
+                $data['logo'] = CloudinaryHelper::uploadImage($request->file('logo'), 'settings');
+
             }
 
             $setting = Setting::create($data);
@@ -95,7 +98,8 @@ class SettingController extends Controller
     public function update(Request $request, $id)
     {
         try {
-            $settings = Setting::find($id);
+            $settings = Setting::find(3);
+            // dd($settings);
 
             if (!$settings) {
                 return response()->json([
@@ -129,17 +133,20 @@ class SettingController extends Controller
             $hasChanges = false;
 
             if ($request->hasFile('logo')) {
-                if ($settings->logo && Storage::exists($settings->logo)) {
-                    Storage::delete($settings->logo);
-                }
-                $companyName = $request->input('company_name', $settings->company_name);
-                $file = $request->file('logo');
-                $extension = $file->getClientOriginalExtension();
+                // if ($settings->logo && Storage::exists($settings->logo)) {
+                //     Storage::delete($settings->logo);
+                // }
+                // $companyName = $request->input('company_name', $settings->company_name);
+                // $file = $request->file('logo');
+                // $extension = $file->getClientOriginalExtension();
 
-                $fileName = Str::slug($companyName) . '_logo.' . $extension;
-                $logoPath = $file->storeAs('logos', $fileName, 'public');
-                $data['logo'] = $logoPath;
-                $hasChanges = true;
+                // $fileName = Str::slug($companyName) . '_logo.' . $extension;
+                // $logoPath = $file->storeAs('logos', $fileName, 'public');
+                // $data['logo'] = $logoPath;
+                // $hasChanges = true;
+
+                $data['logo'] = CloudinaryHelper::uploadImage($request->file('logo'), 'settings');
+
             }
 
             foreach ($data as $key => $value) {
@@ -183,8 +190,9 @@ class SettingController extends Controller
                 ], 404);
             }
 
-            if ($settings->logo && Storage::exists($settings->logo)) {
-                Storage::delete($settings->logo);
+            if ($settings->logo || Storage::exists($settings->logo)) {
+                // Storage::delete($settings->logo);
+                CloudinaryHelper::deleteImage($settings->logo);
             }
 
             $settings->delete();

@@ -33,6 +33,9 @@ export default function NewsCard({ news, featured = false }: NewsCardProps) {
             src={news.image}
             alt={news.title}
             fill
+            sizes="(max-width: 640px) 100vw,
+                   (max-width: 768px) 50vw,
+                   33vw"
             className="object-cover transition-transform duration-500 hover:scale-105"
           />
         ) : (

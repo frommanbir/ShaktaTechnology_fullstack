@@ -62,7 +62,10 @@ export default function Projects() {
     show: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.5, ease: "easeOut" },
+      transition: {
+        ease: "easeOut" as const,
+        duration: 0.5,
+      },
     },
   };
 
@@ -96,7 +99,7 @@ export default function Projects() {
                 {project.image ? (
                   <div className="mb-4 rounded-lg overflow-hidden">
                     <Image
-                      src={`${storageUrl}projects/${project.image}`}
+                      src={project.image}
                       alt={project.title}
                       width={400}
                       height={250}

@@ -411,7 +411,7 @@ export default function AdminMembersPage() {
                       <td className="py-2 px-4">
                         {member.image ? (
                           <Image
-                            src={`${storageUrl}members/${member.image}`}
+                            src={member.image}
                             alt={member.name}
                             width={40}
                             height={40}

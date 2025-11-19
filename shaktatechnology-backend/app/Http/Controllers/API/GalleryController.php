@@ -6,26 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Gallery;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Storage;
+use App\Helpers\CloudinaryHelper;
 
 class GalleryController extends Controller
 {
-    /**
-     * Format full image URL for API response.
-     */
-    private function formatImageUrl(?string $path): ?string
-    {
-        if (!$path) return null;
-
-        $path = ltrim($path, '/');
-
-        if (str_starts_with($path, 'http')) {
-            return $path;
-        }
-
-        return asset('storage/' . $path);
-    }
-
     /**
      * List all galleries.
      */
@@ -33,11 +17,6 @@ class GalleryController extends Controller
     {
         try {
             $galleries = Gallery::orderBy('created_at', 'desc')->get();
-
-            $galleries->transform(function ($gallery) {
-                $gallery->image = $this->formatImageUrl($gallery->image);
-                return $gallery;
-            });
 
             return response()->json([
                 'success' => true,
@@ -60,7 +39,6 @@ class GalleryController extends Controller
     {
         try {
             $gallery = Gallery::findOrFail($id);
-            $gallery->image = $this->formatImageUrl($gallery->image);
 
             return response()->json([
                 'success' => true,
@@ -76,14 +54,14 @@ class GalleryController extends Controller
     }
 
     /**
-     * Create a new gallery item.
+     * Create new gallery item.
      */
     public function store(Request $request): JsonResponse
     {
         $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
         ]);
 
         try {
@@ -92,17 +70,17 @@ class GalleryController extends Controller
             $gallery->description = $request->description;
 
             if ($request->hasFile('image')) {
-                $gallery->image = $request->file('image')->store('galleries', 'public');
+                $gallery->image = CloudinaryHelper::uploadImage($request->file('image'), 'galleries');
             }
 
             $gallery->save();
-            $gallery->image = $this->formatImageUrl($gallery->image);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Gallery created successfully',
                 'data' => $gallery,
             ], 201);
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -113,14 +91,14 @@ class GalleryController extends Controller
     }
 
     /**
-     * Update a gallery item.
+     * Update gallery.
      */
     public function update(Request $request, int $id): JsonResponse
     {
         $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
         ]);
 
         try {
@@ -129,22 +107,23 @@ class GalleryController extends Controller
             $gallery->description = $request->description;
 
             if ($request->hasFile('image')) {
-                // Delete old image
-                if ($gallery->image && Storage::disk('public')->exists($gallery->getRawOriginal('image'))) {
-                    Storage::disk('public')->delete($gallery->getRawOriginal('image'));
+                // delete old Cloudinary image
+                if ($gallery->image) {
+                    CloudinaryHelper::deleteImage($gallery->image);
                 }
 
-                $gallery->image = $request->file('image')->store('galleries', 'public');
+                // upload new
+                $gallery->image = CloudinaryHelper::uploadImage($request->file('image'), 'galleries');
             }
 
             $gallery->save();
-            $gallery->image = $this->formatImageUrl($gallery->image);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Gallery updated successfully',
                 'data' => $gallery,
             ]);
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -155,15 +134,15 @@ class GalleryController extends Controller
     }
 
     /**
-     * Delete a gallery item.
+     * Delete gallery item.
      */
     public function destroy(int $id): JsonResponse
     {
         try {
             $gallery = Gallery::findOrFail($id);
 
-            if ($gallery->image && Storage::disk('public')->exists($gallery->getRawOriginal('image'))) {
-                Storage::disk('public')->delete($gallery->getRawOriginal('image'));
+            if ($gallery->image) {
+                CloudinaryHelper::deleteImage($gallery->image);
             }
 
             $gallery->delete();
@@ -172,6 +151,7 @@ class GalleryController extends Controller
                 'success' => true,
                 'message' => 'Gallery deleted successfully',
             ]);
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

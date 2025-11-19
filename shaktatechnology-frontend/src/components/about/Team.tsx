@@ -36,7 +36,7 @@ export default function TeamPage() {
           position: m.position || "",
           department: m.department || "",
           short_description: m.short_description || "",
-          image: m.image ? `${storageUrl}members/${m.image}` : "",
+          image: m.image ? `${m.image}` : "",
           linkedin: m.linkedin,
           github: m.github,
           facebook: m.facebook,

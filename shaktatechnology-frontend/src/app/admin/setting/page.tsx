@@ -307,7 +307,7 @@ export default function AdminSettingsPage() {
               <label className="block text-gray-700 dark:text-gray-300 mb-2">Logo</label>
               {settings?.logo && (
                 <Image
-                  src={`${storageUrl}${settings.logo}`}
+                  src={`${settings.logo}`}
                   alt="Current Logo"
                   width={100}
                   height={100}

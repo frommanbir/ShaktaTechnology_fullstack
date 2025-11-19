@@ -143,14 +143,11 @@ export default function AdminGalleryListPage() {
                     <td className="px-6 py-4 border-b border-gray-200 dark:border-gray-600">
                       {item.image ? (
                         <Image
-                          src={item.image}
+                          src={item.image?.startsWith("https") ? item.image : `/${item.image}`}
                           alt={item.title}
                           width={80}
                           height={60}
                           className="rounded-md object-cover border border-gray-300 dark:border-gray-600"
-                          onError={(e) => {
-                            e.currentTarget.src = "/fallback-image.jpg";
-                          }}
                         />
                       ) : (
                         <div className="w-20 h-14 bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500 text-sm rounded-md">

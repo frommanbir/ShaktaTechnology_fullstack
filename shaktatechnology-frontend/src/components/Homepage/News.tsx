@@ -158,11 +158,7 @@ export default function HomeNews() {
                   className="w-full h-full"
                 >
                   <Image
-                    src={
-                      item.image.startsWith("http")
-                        ? item.image
-                        : `${storageUrl}news/${item.image}`
-                    }
+                    src={item.image}
                     alt={item.title}
                     fill
                     className="object-cover"

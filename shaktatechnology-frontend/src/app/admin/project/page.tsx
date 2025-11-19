@@ -160,7 +160,7 @@ export default function AdminProjectsPage() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       {project.image ? (
                         <Image
-                          src={`${storageUrl}projects/${project.image}`}
+                          src={`${project.image}`}
                           alt={project.title}
                           width={50}
                           height={50}
