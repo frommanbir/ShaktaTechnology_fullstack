@@ -1,24 +1,36 @@
 "use client";
 
-import { useState } from "react";
-import { createCareer } from "@/lib/api";
-import { Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { createCareer, getCareerTypes } from "@/lib/api";
+import { Loader2, ArrowLeft, Briefcase, Save, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { DetaType } from "@/components/types/CareerTypes";
+import TextEditor from "@/components/global/TextEditor";
+import Link from "next/link";
+import { useToast } from "@/components/Toast";
 
 export default function AddCareerPage() {
+  const { toast } = useToast();
   const router = useRouter();
   const [formData, setFormData] = useState<DetaType>({
     title: "",
     department: "",
     location: "",
-    type: "Full-time",
+    type: "",
     description: "",
     requirements: "",
     benefits: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [careerTypes, setCareerTypes] = useState<{ id: number; name: string }[]>([]);
+
+  useEffect(() => {
+    getCareerTypes().then((data) => {
+      setCareerTypes(data);
+      if (data.length > 0) setFormData((prev) => ({ ...prev, type: data[0].name }));
+    });
+  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -34,139 +46,182 @@ export default function AddCareerPage() {
 
     try {
       await createCareer(formData);
+      toast({
+        title: "Success",
+        description: "Career opportunity created successfully!",
+      });
       router.push("/admin/careers");
     } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to create career");
+      const apiError = err.response?.data;
+      let errorMessage = "Failed to create career";
+      
+      if (apiError?.errors) {
+        const firstErrorField = Object.keys(apiError.errors)[0];
+        errorMessage = apiError.errors[firstErrorField][0] || "Validation error";
+      } else {
+        errorMessage = apiError?.message || "Failed to create career";
+      }
+
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto dark:bg-gray-900 min-h-screen transition-colors duration-300">
-      <h1 className="text-2xl font-bold mb-6 text-gray-800 dark:text-gray-100">Add Career</h1>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 transition-colors duration-300">
+      <div className="max-w-4xl mx-auto">
+        {/* Navigation */}
+        <Link 
+          href="/admin/careers" 
+          className="inline-flex items-center gap-2 text-gray-500 hover:text-blue-600 transition-colors mb-6 group"
+        >
+          <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
+          <span className="text-sm font-medium">Back to Careers</span>
+        </Link>
 
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 dark:bg-red-900 dark:border-red-700 dark:text-red-200 px-4 py-3 rounded mb-4">
-          {error}
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-8">
+          <div className="p-3 bg-blue-100 dark:bg-blue-900/40 rounded-2xl text-blue-600 dark:text-blue-400">
+            <Plus size={28} />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 italic">Create Career</h1>
+            <p className="text-gray-600 dark:text-gray-400">Add a new job opportunity to your recruitment portal.</p>
+          </div>
         </div>
-      )}
 
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 space-y-6 transition-colors duration-300"
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-gray-700 dark:text-gray-300 mb-2">Title *</label>
-            <input
-              type="text"
-              name="title"
-              value={formData.title}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
+        <form onSubmit={handleSubmit} className="space-y-8 pb-12">
+          {/* Basic Info Card */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-8 transition-all duration-300">
+            <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-6 flex items-center gap-2">
+              General Information
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Job Title *</label>
+                <input
+                  type="text"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleChange}
+                  placeholder="e.g. Senior Software Engineer"
+                  className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900/50 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Department</label>
+                <input
+                  type="text"
+                  name="department"
+                  value={formData.department}
+                  onChange={handleChange}
+                  placeholder="e.g. Engineering"
+                  className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900/50 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Location</label>
+                <input
+                  type="text"
+                  name="location"
+                  value={formData.location}
+                  onChange={handleChange}
+                  placeholder="e.g. Remote / New York"
+                  className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900/50 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Employment Type *</label>
+                <select
+                  name="type"
+                  value={formData.type}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900/50 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 appearance-none transition-all cursor-pointer font-medium"
+                  required
+                >
+                  {careerTypes.length === 0 ? (
+                    <option value="" disabled>No types available — add one first</option>
+                  ) : (
+                    careerTypes.map((t) => (
+                      <option key={t.id} value={t.name}>{t.name}</option>
+                    ))
+                  )}
+                </select>
+              </div>
+            </div>
           </div>
 
-          <div>
-            <label className="block text-gray-700 dark:text-gray-300 mb-2">Department</label>
-            <input
-              type="text"
-              name="department"
-              value={formData.department}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+          {/* Details Card */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-8 transition-all duration-300">
+            <div className="space-y-8">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">Job Description *</label>
+                <TextEditor
+                  content={formData.description || ""}
+                  onChange={(value) => setFormData((prev) => ({ ...prev, description: value }))}
+                  placeholder="Describe the role, responsibilities, and team culture..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">Requirements *</label>
+                <TextEditor
+                  content={formData.requirements || ""}
+                  onChange={(value) => setFormData((prev) => ({ ...prev, requirements: value }))}
+                  placeholder="What are the essential skills and experiences for this role?"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">Benefits & Perks</label>
+                <TextEditor
+                  content={formData.benefits || ""}
+                  onChange={(value) => setFormData((prev) => ({ ...prev, benefits: value }))}
+                  placeholder="What makes working here great? Insurance, PTO, learning budget..."
+                />
+              </div>
+            </div>
           </div>
 
-          <div>
-            <label className="block text-gray-700 dark:text-gray-300 mb-2">Location</label>
-            <input
-              type="text"
-              name="location"
-              value={formData.location}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-gray-700 dark:text-gray-300 mb-2">Type *</label>
-            <select
-              name="type"
-              value={formData.type}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
+          {/* Actions */}
+          <div className="flex items-center justify-end gap-4">
+            <button
+              type="button"
+              onClick={() => router.push("/admin/careers")}
+              className="px-6 py-2.5 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all font-medium"
+              disabled={loading}
             >
-              <option value="Full-time">Full-time</option>
-              <option value="Part-time">Part-time</option>
-              <option value="Internship">Internship</option>
-              <option value="Contract">Contract</option>
-            </select>
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-8 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 font-semibold flex items-center gap-2 active:scale-95 disabled:opacity-50"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="animate-spin" size={20} />
+                  <span>Processing...</span>
+                </>
+              ) : (
+                <>
+                  <Save size={20} />
+                  <span>Post Job</span>
+                </>
+              )}
+            </button>
           </div>
-
-          <div className="col-span-2">
-            <label className="block text-gray-700 dark:text-gray-300 mb-2">Description *</label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              rows={4}
-              required
-            />
-          </div>
-
-          <div className="col-span-2">
-            <label className="block text-gray-700 dark:text-gray-300 mb-2">Requirements *</label>
-            <textarea
-              name="requirements"
-              value={formData.requirements}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              rows={4}
-              required
-            />
-          </div>
-
-          <div className="col-span-2">
-            <label className="block text-gray-700 dark:text-gray-300 mb-2">Benefits</label>
-            <textarea
-              name="benefits"
-              value={formData.benefits}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              rows={4}
-            />
-          </div>
-        </div>
-
-        <div className="flex justify-end space-x-3">
-          <button
-            type="button"
-            onClick={() => router.push("/admin/careers")}
-            className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 transition-colors"
-            disabled={loading}
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors disabled:opacity-50 flex items-center"
-            disabled={loading}
-          >
-            {loading ? (
-              <>
-                <Loader2 className="animate-spin h-4 w-4 mr-2" /> Creating...
-              </>
-            ) : (
-              "Create Career"
-            )}
-          </button>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   );
 }

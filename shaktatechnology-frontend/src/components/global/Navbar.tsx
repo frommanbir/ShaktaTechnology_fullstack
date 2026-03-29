@@ -7,6 +7,7 @@ import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getSettings } from "@/lib/api";
 import ThemeToggle from "../ThemeToggle";
+import { usePathname } from "next/navigation";
 
 interface Setting {
   id: number;
@@ -20,13 +21,14 @@ export default function Navbar() {
   const [showNavbar, setShowNavbar] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const storageUrl = process.env.NEXT_PUBLIC_STORAGE_URL;
+  const pathname = usePathname();
 
   const navLinks = [
-    { name: "Home", href: "/" },
+    // { name: "Home", href: "/" },
+    { name: "About", href: "/about" },
     { name: "Services", href: "/services" },
     { name: "Projects", href: "/projects" },
     { name: "Gallery", href: "/gallery" },
-    { name: "About", href: "/about" },
     { name: "Careers", href: "/careers" },
     { name: "News", href: "/news" },
     { name: "Contact", href: "/contact" },
@@ -82,15 +84,11 @@ export default function Navbar() {
             className="relative w-28 h-10"
           >
             <Image
-              src={
-                settings?.logo
-                  ? `${settings.logo}`
-                  : "/logo/shaktalogo.svg"
-              }
+              src="/logo/shaktalogo.svg"
               alt={settings?.company_name || "Logo"}
               fill
               sizes="(max-width: 768px) 120px, (max-width: 1200px) 160px, 200px"
-              className="object-contain dark:invert dark:brightness-200"
+              className="object-contain transition-all duration-300 dark:brightness-0 dark:invert"
               priority
             />
           </motion.div>
@@ -102,9 +100,23 @@ export default function Navbar() {
             <motion.div key={link.name} whileHover={{ y: -2 }} transition={{ duration: 0.2 }}>
               <Link
                 href={link.href}
-                className="text-gray-900 dark:text-gray-200 hover:text-purple-600 dark:hover:text-purple-400 font-medium transition-colors"
+                className={`relative font-medium transition-colors
+                  ${
+                    pathname === link.href
+                      ? "text-purple-600 dark:text-purple-400"
+                      : "text-gray-900 dark:text-gray-200 hover:text-purple-600 dark:hover:text-purple-400"
+                  }
+                `}
               >
                 {link.name}
+
+                {/* underline */}
+                {pathname === link.href && (
+                  <motion.span
+                    layoutId="underline"
+                    className="absolute left-0 -bottom-1 w-full h-[2px] bg-white"
+                  />
+                )}
               </Link>
             </motion.div>
           ))}

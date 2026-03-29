@@ -22,19 +22,30 @@ export default function UserProjects() {
   const storageUrl = process.env.NEXT_PUBLIC_STORAGE_URL;
 
   useEffect(() => {
-  const fetchProjects = async () => {
-    try {
-      const response = await getProjects();
-      console.log("API projects:", response.data); // <-- log the data
-      setProjects(response.data);
-    } catch (error) {
-      console.error("Failed to fetch projects:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-  fetchProjects();
-}, []);
+    const fetchProjects = async () => {
+      try {
+        const data = await getProjects();
+        setProjects(data);
+      } catch (error) {
+        console.error("Failed to fetch projects:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProjects();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-40">
+        <Loader2 className="animate-spin h-10 w-10 text-violet-600 dark:text-violet-400" />
+      </div>
+    );
+  }
+
+  if (error || !projects || projects.length === 0) {
+    return null;
+  }
 
   return (
     <section className="py-16 text-center transition-colors duration-300 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden">
@@ -62,63 +73,51 @@ export default function UserProjects() {
         transform digitally.
       </motion.p>
 
-      {loading ? (
-        <div className="flex justify-center items-center h-40">
-          <Loader2 className="animate-spin h-10 w-10 text-violet-600 dark:text-violet-400" />
-        </div>
-      ) : error ? (
-        <p className="text-red-600 dark:text-red-400 mt-6">{error}</p>
-      ) : projects.length === 0 ? (
-        <p className="text-gray-600 dark:text-gray-300 mt-6">
-          No projects available.
-        </p>
-      ) : (
-        <motion.div
-          className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto"
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          variants={{
-            hidden: {},
-            visible: {
-              transition: {
-                staggerChildren: 0.15,
-              },
+      <motion.div
+        className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        variants={{
+          hidden: {},
+          visible: {
+            transition: {
+              staggerChildren: 0.15,
             },
-          }}
-        >
-          {projects.map((project) => (
-            <motion.div
-              key={project.id}
-              variants={{
-                hidden: { opacity: 0, y: 30 },
-                visible: { opacity: 1, y: 0 },
-              }}
-              transition={{ duration: 0.5 }}
-              className="bg-white dark:bg-slate-800 rounded-2xl shadow hover:shadow-lg dark:hover:shadow-slate-700/50 transition-all duration-300 p-6 border border-slate-100 dark:border-slate-700"
-              whileHover={{ scale: 1.03 }}
-            >
-              {project.image ? (
-                <Image
-                  src={`${project.image}`}
-                  alt={project.title}
-                  width={400}
-                  height={200}
-                  className="w-full h-48 object-cover rounded-2xl mb-4"
-                />
-              ) : (
-                <div className="w-full h-48 bg-gray-200 dark:bg-slate-700 flex items-center justify-center text-gray-500 dark:text-gray-300 rounded-2xl mb-4">
-                  No Image
-                </div>
-              )}
-              <h3 className="font-semibold text-lg">{project.title}</h3>
-              <p className="text-gray-600 dark:text-gray-300 mt-2 line-clamp-3">
-                {project.description}
-              </p>
-            </motion.div>
-          ))}
-        </motion.div>
-      )}
+          },
+        }}
+      >
+        {projects.map((project) => (
+          <motion.div
+            key={project.id}
+            variants={{
+              hidden: { opacity: 0, y: 30 },
+              visible: { opacity: 1, y: 0 },
+            }}
+            transition={{ duration: 0.5 }}
+            className="bg-white dark:bg-slate-800 rounded-2xl shadow hover:shadow-lg dark:hover:shadow-slate-700/50 transition-all duration-300 p-6 border border-slate-100 dark:border-slate-700"
+            whileHover={{ scale: 1.03 }}
+          >
+            {project.image ? (
+              <Image
+                src={`${project.image}`}
+                alt={project.title}
+                width={400}
+                height={200}
+                className="w-full h-48 object-cover rounded-2xl mb-4"
+              />
+            ) : (
+              <div className="w-full h-48 bg-gray-200 dark:bg-slate-700 flex items-center justify-center text-gray-500 dark:text-gray-300 rounded-2xl mb-4">
+                No Image
+              </div>
+            )}
+            <h3 className="font-semibold text-lg">{project.title}</h3>
+            <p className="text-gray-600 dark:text-gray-300 mt-2 line-clamp-3">
+              {project.description}
+            </p>
+          </motion.div>
+        ))}
+      </motion.div>
 
       <motion.button
         className="mt-8 px-5 py-3 border border-gray-300 dark:border-slate-600 rounded-xl text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-800 transition"

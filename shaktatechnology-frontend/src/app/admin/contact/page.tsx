@@ -3,7 +3,9 @@
 import { useState, useEffect, Fragment } from "react";
 import { getContacts, deleteContact } from "@/lib/api";
 import { Dialog, Transition } from "@headlessui/react";
-import { Loader2, Trash2 } from "lucide-react";
+import { Loader2, Trash2, Eye } from "lucide-react";
+import { TableSkeleton, TableEmptyState } from "@/components/ui/table-skeleton";
+import { Pagination } from "@/components/ui/pagination";
 
 interface Contact {
   id: number;
@@ -25,6 +27,12 @@ export default function AdminContactPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [contactToDelete, setContactToDelete] = useState<Contact | null>(null);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [contactToView, setContactToView] = useState<Contact | null>(null);
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     const stored = localStorage.getItem("viewed_contacts");
@@ -53,8 +61,15 @@ export default function AdminContactPage() {
     fetchContacts();
   }, []);
 
+  const totalPages = Math.ceil(contacts.length / itemsPerPage);
+  const paginatedContacts = contacts.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   const handleRowClick = (id: number, event: React.MouseEvent) => {
     if ((event.target as HTMLElement).closest(".delete-button") || showDeleteModal) return;
+    if ((event.target as HTMLElement).closest(".view-button") || showViewModal) return;
     if (viewedContacts[id]) return;
     const updated = { ...viewedContacts, [id]: true };
     setViewedContacts(updated);
@@ -66,7 +81,17 @@ export default function AdminContactPage() {
     setIsDeleting(true);
     try {
       await deleteContact(contactToDelete.id);
-      setContacts(contacts.filter((c) => c.id !== contactToDelete.id));
+      
+      const newContacts = contacts.filter((c) => c.id !== contactToDelete.id);
+      setContacts(newContacts);
+      
+      const newTotalPages = Math.ceil(newContacts.length / itemsPerPage);
+      if (currentPage > newTotalPages && newTotalPages > 0) {
+        setCurrentPage(newTotalPages);
+      } else if (newTotalPages === 0) {
+        setCurrentPage(1);
+      }
+
       const updatedViewed = { ...viewedContacts };
       delete updatedViewed[contactToDelete.id];
       setViewedContacts(updatedViewed);
@@ -92,67 +117,65 @@ export default function AdminContactPage() {
         </div>
       )}
 
-      {loading ? (
-        <div className="flex justify-center items-center h-64 dark:text-gray-100">
-          <Loader2 className="animate-spin h-12 w-12 text-blue-600" />
-        </div>
-      ) : contacts.length === 0 ? (
-        <p className="text-gray-600 dark:text-gray-300">No contacts found.</p>
-      ) : (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden transition-colors duration-300">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-700">
-              <tr>
-                {[
-                  "Status",
-                  "Company Name",
-                  "Name",
-                  "Email",
-                  "Services",
-                  "Budget",
-                  "Actions",
-                ].map((header, i) => (
-                  <th
-                    key={i}
-                    className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                      header === "Actions"
-                        ? "text-right"
-                        : "text-gray-500 dark:text-gray-300"
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-x-auto transition-colors duration-300">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead className="bg-gray-50 dark:bg-gray-700">
+            <tr>
+              {[
+                "S.N",
+                "Status",
+                "Company Name",
+                "Name",
+                "Email",
+                "Services",
+                "Budget",
+                "Actions",
+              ].map((header, i) => (
+                <th
+                  key={i}
+                  className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${header === "Actions" ? "text-right" : "text-gray-500 dark:text-gray-300"
                     }`}
-                  >
-                    {header}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {contacts.map((contact) => (
+                >
+                  {header}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+            {loading ? (
+              <TableSkeleton rows={5} columns={7} showActions={true} />
+            ) : contacts.length === 0 ? (
+              <TableEmptyState message="No contacts found." colSpan={8} />
+            ) : (
+              paginatedContacts.map((contact, index) => (
                 <tr
                   key={contact.id}
                   onClick={(e) => handleRowClick(contact.id, e)}
                   className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition"
                 >
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 font-medium">
+                    {(currentPage - 1) * itemsPerPage + index + 1}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
-                      className={`px-2 py-1 rounded text-xs font-medium ${
-                        viewedContacts[contact.id]
-                          ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                          : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                      }`}
+                      className={`px-2 py-1 rounded text-xs font-medium ${viewedContacts[contact.id]
+                        ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                        : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                        }`}
                     >
                       {viewedContacts[contact.id] ? "Viewed" : "New"}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-800 dark:text-gray-100">
+                  <td className="px-6 py-4 text-gray-800 dark:text-gray-100 truncate max-w-[150px]" title={contact.Company_name}>
                     {contact.Company_name}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-800 dark:text-gray-100">
+                  <td className="px-6 py-4 text-gray-800 dark:text-gray-100 truncate max-w-[150px]" title={contact.name}>
                     {contact.name}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-800 dark:text-gray-100">
+                  <td className="px-6 py-4 text-gray-800 dark:text-gray-100 truncate max-w-[200px]" title={contact.email}>
                     {contact.email}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-800 dark:text-gray-100">
+                  <td className="px-6 py-4 text-gray-800 dark:text-gray-100 truncate max-w-[200px]" title={contact.services}>
                     {contact.services}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-gray-800 dark:text-gray-100">
@@ -160,7 +183,24 @@ export default function AdminContactPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setContactToView(contact);
+                        setShowViewModal(true);
+                        // Also mark as viewed if clicking view directly
+                        if (!viewedContacts[contact.id]) {
+                          const updated = { ...viewedContacts, [contact.id]: true };
+                          setViewedContacts(updated);
+                          localStorage.setItem("viewed_contacts", JSON.stringify(updated));
+                        }
+                      }}
+                      className="view-button text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 mr-4"
+                    >
+                      <Eye className="h-5 w-5 inline" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
                         setContactToDelete(contact);
                         setShowDeleteModal(true);
                       }}
@@ -170,11 +210,115 @@ export default function AdminContactPage() {
                     </button>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {!loading && contacts.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          totalItems={contacts.length}
+          itemsPerPage={itemsPerPage}
+        />
       )}
+
+      {/* View Contact Modal */}
+      <Transition show={showViewModal} as={Fragment}>
+        <Dialog as="div" className="relative z-50" onClose={() => setShowViewModal(false)}>
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black/50 bg-opacity-75" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 flex items-center justify-center p-4">
+            <Transition.Child
+              as={Fragment}
+              enter="ease-out duration-300"
+              enterFrom="opacity-0 scale-95"
+              enterTo="opacity-100 scale-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100 scale-100"
+              leaveTo="opacity-0 scale-95"
+            >
+              <Dialog.Panel className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+                <div className="flex justify-between items-center mb-4 border-b pb-3 dark:border-gray-700">
+                  <Dialog.Title className="text-xl font-bold text-gray-800 dark:text-gray-100">
+                    Contact Details
+                  </Dialog.Title>
+                  <button
+                    onClick={() => setShowViewModal(false)}
+                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {contactToView && (
+                  <div className="space-y-6 text-gray-700 dark:text-gray-300">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-6">
+                      <div>
+                        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Company Name</p>
+                        <p className="font-medium text-lg leading-tight">{contactToView.Company_name}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Contact Name</p>
+                        <p className="font-medium text-lg leading-tight">{contactToView.name}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Email</p>
+                        <p className="font-medium">{contactToView.email}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Phone</p>
+                        <p className="font-medium">{contactToView.phone || "N/A"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Services Required</p>
+                        <p className="font-medium">{contactToView.services}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Estimated Budget</p>
+                        <p className="font-medium">${contactToView.budget}</p>
+                      </div>
+                      <div className="md:col-span-2">
+                        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Date Submitted</p>
+                        <p className="font-medium">{new Date(contactToView.created_at).toLocaleString()}</p>
+                      </div>
+                    </div>
+
+                    <div className="pt-4 border-t dark:border-gray-700">
+                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Project Details</p>
+                      <div className="bg-gray-50 dark:bg-gray-900 pr-4 py-4 rounded-md whitespace-pre-wrap text-sm leading-relaxed min-h-[100px] border dark:border-gray-700 pl-4">
+                        {contactToView.project_details || "No specific project details were provided."}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="mt-8 flex justify-end">
+                  <button
+                    onClick={() => setShowViewModal(false)}
+                    className="px-5 py-2.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition shadow-sm font-medium cursor-pointer"
+                  >
+                    Close Dialog
+                  </button>
+                </div>
+              </Dialog.Panel>
+            </Transition.Child>
+          </div>
+        </Dialog>
+      </Transition>
 
       {/* Delete Confirmation Modal */}
       <Transition show={showDeleteModal} as={Fragment}>

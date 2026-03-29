@@ -68,13 +68,13 @@ export default async function NewsPage() {
           </div>
         ) : (
           <p className="text-gray-500 dark:text-gray-400 text-center">
-            No recent news found.
+            No recent news found for now.
           </p>
         )}
       </section>
 
       {/* Newsletter Section */}
-      <footer className="bg-white dark:bg-gray-800 py-16 border-t border-gray-200 dark:border-gray-700 text-center transition-colors duration-300">
+      {/* <footer className="bg-white dark:bg-gray-800 py-16 border-t border-gray-200 dark:border-gray-700 text-center transition-colors duration-300">
         <h3 className="text-2xl font-bold mb-4">
           Stay in the{" "}
           <span className="text-purple-600 dark:text-purple-400">Loop</span>
@@ -94,7 +94,7 @@ export default async function NewsPage() {
             Subscribe
           </button>
         </div>
-      </footer>
+      </footer> */}
     </div>
   );
 }

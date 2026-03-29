@@ -4,6 +4,8 @@ import { useState, useEffect, Fragment } from "react";
 import { getServices, deleteService } from "@/lib/api";
 import { Dialog, Transition } from "@headlessui/react";
 import { Loader2, Trash2, Edit } from "lucide-react";
+import { TableSkeleton, TableEmptyState } from "@/components/ui/table-skeleton";
+import { Pagination } from "@/components/ui/pagination";
 import Link from "next/link";
 import { useToast } from "@/components/Toast";
 
@@ -25,6 +27,10 @@ export default function AdminServicesPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null);
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     async function fetchServices() {
@@ -49,6 +55,12 @@ export default function AdminServicesPage() {
     }
     fetchServices();
   }, []);
+
+  const totalPages = Math.ceil(services.length / itemsPerPage);
+  const paginatedServices = services.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const handleDelete = async () => {
     if (!serviceToDelete) return;
@@ -84,34 +96,51 @@ export default function AdminServicesPage() {
         </div>
       )}
 
-      {loading ? (
-        <div className="flex justify-center items-center min-h-[200px]">
-          <Loader2 className="animate-spin h-12 w-12 text-blue-600 dark:text-blue-400" />
-        </div>
-      ) : services.length === 0 ? (
-        <p className="text-gray-600 dark:text-gray-400">No services found.</p>
-      ) : (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead className="bg-gray-50 dark:bg-gray-700">
-                <tr>
-                  {["Title", "Description", "Features/Tech", "Actions"].map((col) => (
-                    <th
-                      key={col}
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                    >
-                      {col}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {services.map((service) => (
-                  <tr key={service.id}>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden transition-colors duration-300">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-700">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  S.N
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Title
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Description
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Features/Tech
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              {loading ? (
+                <TableSkeleton rows={5} columns={4} />
+              ) : services.length === 0 ? (
+                <TableEmptyState 
+                  message={
+                    <>
+                      No services found.{" "}
+                      <Link href="/admin/services/add" className="text-blue-600 hover:underline">
+                        Add the first one
+                      </Link>
+                    </>
+                  } 
+                  colSpan={5} 
+                />
+              ) : (
+                paginatedServices.map((service, index) => (
+                  <tr key={service.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 font-medium">
+                      {(currentPage - 1) * itemsPerPage + index + 1}
+                    </td>
                     <td className="px-6 py-4 break-words max-w-xs text-gray-900 dark:text-gray-100">{service.title}</td>
                     <td className="px-6 py-4 break-words max-w-md text-gray-800 dark:text-gray-200">{service.description || "N/A"}</td>
-                    {/* <td className="px-6 py-4 break-words max-w-xs text-gray-800 dark:text-gray-200">{service.price || "N/A"}</td> */}
                     <td className="px-6 py-4 break-words max-w-xs text-sm text-gray-700 dark:text-gray-300">
                       {(service.features?.slice(0, 2).join(", ") || "") +
                         (service.technologies?.length ? ` | ${service.technologies.slice(0, 2).join(", ")}` : "") ||
@@ -135,11 +164,21 @@ export default function AdminServicesPage() {
                       </button>
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
+      </div>
+
+      {!loading && services.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          totalItems={services.length}
+          itemsPerPage={itemsPerPage}
+        />
       )}
 
       <Transition show={showDeleteModal} as={Fragment}>
@@ -166,7 +205,7 @@ export default function AdminServicesPage() {
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="bg-white dark:bg-gray-900 rounded-lg max-w-md w-full p-6">
+              <Dialog.Panel className="bg-white dark:bg-gray-900 rounded-lg max-w-md w-full p-6 transition-colors shadow-xl">
                 <Dialog.Title className="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100">
                   Confirm Deletion
                 </Dialog.Title>
@@ -177,14 +216,14 @@ export default function AdminServicesPage() {
                 <div className="flex justify-end gap-3">
                   <button
                     onClick={() => setShowDeleteModal(false)}
-                    className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                    className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 transition-colors"
                     disabled={isDeleting}
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleDelete}
-                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 flex items-center disabled:opacity-50"
+                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 flex items-center disabled:opacity-50 transition-colors"
                     disabled={isDeleting}
                   >
                     {isDeleting ? "Deleting..." : "Delete Service"}

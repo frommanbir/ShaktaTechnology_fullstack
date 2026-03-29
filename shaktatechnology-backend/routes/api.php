@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\API\CareerController;
+use App\Http\Controllers\API\CareerTypeController;
 use App\Http\Controllers\API\FaqController;
 use App\Http\Controllers\API\MemberController;
 use App\Http\Controllers\API\ProjectController;
@@ -35,20 +36,24 @@ Route::get('/faqs/{id}', [FaqController::class, 'show']);
 Route::get('/careers', [CareerController::class, 'index']);
 Route::get('/careers/{id}', [CareerController::class, 'show']);
 
+// Career types are public (needed by the frontend form)
+Route::get('/career-types', [CareerTypeController::class, 'index']);
+
 Route::get('/contacts', [ContactController::class, 'index']);
 Route::get('/contacts/{id}', [ContactController::class, 'show']);
 
 Route::get('/settings', [SettingController::class, 'index']);
 Route::get('/settings/{id}', [SettingController::class, 'show']);
 
-Route::get('/galleries',[GalleryController::class, 'index']);
-Route::get('/galleries/{id}',[GalleryController::class, 'show']);
+Route::get('/galleries', [GalleryController::class, 'index']);
+Route::get('/galleries/{id}', [GalleryController::class, 'show']);
 
-Route::get('/news',[NewsController::class, 'index']);
-Route::get('/news/{id}',[NewsController::class, 'show']);
+Route::get('/news', [NewsController::class, 'index']);
+Route::get('/news/{id}', [NewsController::class, 'show']);
 
 Route::get('/testimonials', [TestimonialController::class, 'index']);
 Route::get('/testimonials/{id}', [TestimonialController::class, 'show']);
+
 // Routes protected by Sanctum
 Route::middleware('auth:sanctum')->group(function () {
     // Logout
@@ -60,10 +65,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('members', MemberController::class)->except(['index', 'show']);
     Route::apiResource('faqs', FaqController::class)->except(['index', 'show']);
     Route::apiResource('careers', CareerController::class)->except(['index', 'show']);
+    Route::patch('/careers/{id}/toggle-status', [CareerController::class, 'toggleStatus']);
+    Route::apiResource('career-types', CareerTypeController::class)->except(['index', 'show']);
     Route::apiResource('contacts', ContactController::class)->except(['index', 'show']);
     Route::apiResource('settings', SettingController::class)->except(['index', 'show']);
     Route::apiResource('galleries', GalleryController::class)->except(['index', 'show']);
-    Route::apiResource('news',NewsController::class)->except(['index', 'show']);
+    Route::apiResource('news', NewsController::class)->except(['index', 'show']);
     Route::apiResource('testimonials', TestimonialController::class)->except(['index', 'show']);
 
     // Authenticated user info

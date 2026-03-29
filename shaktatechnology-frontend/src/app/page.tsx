@@ -9,7 +9,7 @@ import React from 'react'
 
 const page = () => {
   return (
-    <main className="font-sans text-gray-800">
+    <main className="font-sans text-gray-800 dark:text-gray-200">
       <Herosection />
       <Stats />
       <Services />

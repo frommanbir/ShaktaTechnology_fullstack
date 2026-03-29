@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Loader2, Plus, Edit, Trash2, RefreshCw } from "lucide-react";
 import Link from "next/link";
+import { TableSkeleton, TableEmptyState } from "@/components/ui/table-skeleton";
+import { Pagination } from "@/components/ui/pagination";
 
 interface Gallery {
   id: number;
@@ -20,6 +22,10 @@ export default function AdminGalleryListPage() {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
 
   // Fetch all galleries
   const fetchGalleries = async () => {
@@ -46,7 +52,15 @@ export default function AdminGalleryListPage() {
     setDeletingId(id);
     try {
       await deleteGallery(id);
-      setGalleries((prev) => prev.filter((g) => g.id !== id));
+      const newGalleries = galleries.filter((g) => g.id !== id);
+      setGalleries(newGalleries);
+
+      const newTotalPages = Math.ceil(newGalleries.length / itemsPerPage);
+      if (currentPage > newTotalPages && newTotalPages > 0) {
+        setCurrentPage(newTotalPages);
+      } else if (newTotalPages === 0) {
+        setCurrentPage(1);
+      }
     } catch (error) {
       console.error("Failed to delete gallery:", error);
       setError("Failed to delete gallery. Please try again.");
@@ -55,14 +69,12 @@ export default function AdminGalleryListPage() {
     }
   };
 
-  // Show loader while fetching
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen bg-gray-50 dark:bg-gray-900">
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
-      </div>
-    );
-  }
+  const totalPages = Math.ceil(galleries.length / itemsPerPage);
+  const paginatedGalleries = galleries.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
 
   return (
     <div className="min-h-screen py-8 px-6 bg-gray-50 dark:bg-gray-900">
@@ -97,49 +109,37 @@ export default function AdminGalleryListPage() {
           </div>
         )}
 
-        {/* Table */}
-        {galleries.length === 0 ? (
-          <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-10 text-center text-gray-500 dark:text-gray-400">
-            <p>No gallery items available.</p>
-            <Link
-              href="/admin/gallery/add"
-              className="inline-block mt-4 text-indigo-600 hover:underline"
-            >
-              Add your first gallery item →
-            </Link>
-          </div>
-        ) : (
-          <div className="overflow-x-auto bg-white dark:bg-gray-800 shadow-md rounded-lg">
-            <table className="min-w-full border-collapse">
-              <thead>
-                <tr className="bg-gray-100 dark:bg-gray-700 text-left text-gray-700 dark:text-gray-200 uppercase text-sm">
-                  <th className="px-6 py-3 border-b border-gray-200 dark:border-gray-600">
-                    #
-                  </th>
-                  <th className="px-6 py-3 border-b border-gray-200 dark:border-gray-600">
-                    Image
-                  </th>
-                  <th className="px-6 py-3 border-b border-gray-200 dark:border-gray-600">
-                    Title
-                  </th>
-                  <th className="px-6 py-3 border-b border-gray-200 dark:border-gray-600">
-                    Description
-                  </th>
-                  <th className="px-6 py-3 border-b border-gray-200 dark:border-gray-600 text-right">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {galleries.map((item, index) => (
-                  <tr
-                    key={item.id}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
-                  >
+        {/* Table container */}
+        <div className="overflow-x-auto bg-white dark:bg-gray-800 shadow-md rounded-lg">
+          <table className="min-w-full border-collapse">
+            <thead>
+              <tr className="bg-gray-100 dark:bg-gray-700 text-left text-gray-700 dark:text-gray-200 uppercase text-sm">
+                <th className="px-6 py-3 border-b border-gray-200 dark:border-gray-600">S.N</th>
+                <th className="px-6 py-3 border-b border-gray-200 dark:border-gray-600">Image</th>
+                <th className="px-6 py-3 border-b border-gray-200 dark:border-gray-600">Title</th>
+                <th className="px-6 py-3 border-b border-gray-200 dark:border-gray-600">Description</th>
+                <th className="px-6 py-3 border-b border-gray-200 dark:border-gray-600 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+              {loading ? (
+                <TableSkeleton rows={itemsPerPage} columns={3} showImage={true} showActions={true} />
+              ) : galleries.length === 0 ? (
+                <TableEmptyState 
+                  message={
+                    <>
+                      <p>No gallery items available.</p>
+                      <Link href="/admin/gallery/add" className="inline-block mt-4 text-indigo-600 dark:text-indigo-400 hover:underline">Add your first gallery item →</Link>
+                    </>
+                  } 
+                  colSpan={5} 
+                />
+              ) : (
+                paginatedGalleries.map((item, index) => (
+                  <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200">
                     <td className="px-6 py-4 border-b border-gray-200 dark:border-gray-600 text-gray-800 dark:text-gray-200">
-                      {index + 1}
+                      {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
-
                     <td className="px-6 py-4 border-b border-gray-200 dark:border-gray-600">
                       {item.image ? (
                         <Image
@@ -155,38 +155,37 @@ export default function AdminGalleryListPage() {
                         </div>
                       )}
                     </td>
-
                     <td className="px-6 py-4 border-b border-gray-200 dark:border-gray-600 font-medium text-gray-900 dark:text-gray-100">
                       {item.title}
                     </td>
-
                     <td className="px-6 py-4 border-b border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300">
                       {item.description || "-"}
                     </td>
-
                     <td className="px-6 py-4 border-b border-gray-200 dark:border-gray-600 text-right space-x-2">
-                      <Link
-                        href={`/admin/gallery/${item.id}/edit`}
-                        className="inline-flex items-center p-2 text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300"
-                      >
+                      <Link href={`/admin/gallery/${item.id}/edit`} className="inline-flex items-center p-2 text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300">
                         <Edit className="w-4 h-4" />
                       </Link>
-                      <button
-                        onClick={() => handleDelete(item.id)}
-                        disabled={deletingId === item.id}
-                        className="inline-flex items-center p-2 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 disabled:opacity-50"
-                      >
-                        {deletingId === item.id ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <Trash2 className="w-4 h-4" />
-                        )}
+                      <button onClick={() => handleDelete(item.id)} disabled={deletingId === item.id} className="inline-flex items-center p-2 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 disabled:opacity-50">
+                        {deletingId === item.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                       </button>
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination Section */}
+        {!loading && galleries.length > itemsPerPage && (
+          <div className="mt-8 flex justify-center">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              totalItems={galleries.length}
+              itemsPerPage={itemsPerPage}
+            />
           </div>
         )}
       </div>

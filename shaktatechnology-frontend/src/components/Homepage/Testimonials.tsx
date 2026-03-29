@@ -12,12 +12,8 @@ interface Testimonial {
   role: string;
 }
 
-const fallbackTestimonials: Testimonial[] = [
-  { id: 1, name: 'Sarah Johnson', role: 'CEO of TechCorp', text: 'ShaktaTechnology transformed our online digital infrastructure...' },
-  { id: 2, name: 'Mitchell Chan', role: 'Product Manager at StartupX', text: 'The mobile app they developed was a complete game-changer...' },
-  { id: 3, name: 'Emily Rodriguez', role: 'CIO at InnovateSoft', text: 'Professional, reliable, and consistently innovative...' },
-  { id: 4, name: 'David Kim', role: 'CTO at GlobalTech', text: 'Outstanding technical expertise and project management...' },
-];
+// Fallback testimonials removed as per user request
+
 
 export default function Testimonials() {
   const [reviews, setReviews] = useState<Testimonial[]>([]);
@@ -32,11 +28,12 @@ export default function Testimonials() {
         setLoading(true);
         setError(null);
         const data = await getTestimonials();
-        if (data && data.length > 0) setReviews(data);
-        else throw new Error('No testimonials found');
-      } catch {
+        if (data && data.length > 0) {
+          setReviews(data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch testimonials:', err);
         setError('Unable to load testimonials at this time');
-        setReviews(fallbackTestimonials);
       } finally {
         setLoading(false);
       }
@@ -74,6 +71,8 @@ export default function Testimonials() {
       </section>
     );
 
+  if (reviews.length === 0) return null;
+
   const currentTestimonial = reviews[current];
 
   const variants = {
@@ -99,11 +98,6 @@ export default function Testimonials() {
           Don't just take our word for it. Here's what our clients have to say about working with us.
         </p>
 
-        {error && (
-          <p className="text-amber-600 dark:text-amber-400 text-sm bg-amber-50 dark:bg-amber-900/30 inline-block px-4 py-2 rounded-lg mb-6">
-            {error} (Showing demo testimonials)
-          </p>
-        )}
 
         {/* Arrows */}
         {reviews.length > 1 && (

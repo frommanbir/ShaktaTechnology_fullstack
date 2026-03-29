@@ -1,7 +1,9 @@
 import axios from 'axios';
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api";
+
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL
+  baseURL: API_BASE.endsWith("/") ? API_BASE : `${API_BASE}/`,
 });
 
 api.interceptors.request.use((config) => {
@@ -30,7 +32,7 @@ api.interceptors.response.use(
 
 export const checkAuth = async () => {
   try {
-    const response = await api.get('/user');
+    const response = await api.get('user');
     return response.data;
   } catch (error) {
     return null;
@@ -38,7 +40,7 @@ export const checkAuth = async () => {
 };
 
 export const login = async (credentials: { email: string; password: string }) => {
-  const response = await api.post('/login', credentials);
+  const response = await api.post('login', credentials);
   if (response.data.success) {
     localStorage.setItem('token', response.data.access_token);
     localStorage.setItem('user_email', credentials.email);
@@ -47,17 +49,22 @@ export const login = async (credentials: { email: string; password: string }) =>
 };
 
 export const getMembers = async (page: number = 1, limit: number = 10) => {
-  const response = await api.get(`/members?page=${page}&limit=${limit}`);
-  return response.data;
+  try {
+    const response = await api.get(`members?page=${page}&limit=${limit}`);
+    return response.data;
+  } catch (error) {
+    console.error("Failed to fetch members:", error);
+    return { data: [], total_pages: 1 };
+  }
 };
 
 export const getMember = async (id: number) => {
-  const response = await api.get(`/members/${id}`);
+  const response = await api.get(`members/${id}`);
   return response.data.data;
 };
 
 export const createMember = async (formData: FormData) => {
-  const response = await api.post("/members", formData, {
+  const response = await api.post("members", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
   return response.data;
@@ -74,21 +81,24 @@ export const updateMember = async (id: number, data: any) => {
   });
   formData.append('_method', 'PUT');
   
-  const response = await api.post(`/members/${id}`, formData, {
+  const response = await api.post(`members/${id}`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
   return response.data;
 };
 
 export const deleteMember = async (id: number) => {
-  await api.delete(`/members/${id}`);
+  await api.delete(`members/${id}`);
 };
 
 export const getSettings = async () => {
-  const response = await api.get('/settings',{
-    
-  });
-  return response.data;
+  try {
+    const response = await api.get('settings');
+    return response.data;
+  } catch (error) {
+    console.error("Failed to fetch settings:", error);
+    return {};
+  }
 };
 
 export const createSettings = async (data: any) => {
@@ -98,7 +108,7 @@ export const createSettings = async (data: any) => {
       formData.append(key, data[key]);
     }
   });
-  const response = await api.post('/settings', formData, {
+  const response = await api.post('settings', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
   return response.data;
@@ -116,7 +126,7 @@ export const updateSettings = async (id: number, data: any) => {
 
   formData.append("_method", "PUT");
 
-  const response = await api.post(`/settings/${id}`, formData, {
+  const response = await api.post(`settings/${id}`, formData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
@@ -127,37 +137,63 @@ export const updateSettings = async (id: number, data: any) => {
 
 
 export const deleteSettings = async (id: number) => {
-  await api.delete(`/settings/${id}`);
+  await api.delete(`settings/${id}`);
 };
 
 export const getCareers = async () => {
-  const response = await api.get('/careers');
+  const response = await api.get('careers');
   return Array.isArray(response.data)
-  ? response.data
-  : response.data?.data || [];  
+    ? response.data
+    : response.data?.data || [];
 };
 
 export const getCareer = async (id: number) => {
-  const response = await api.get(`/careers/${id}`);
+  const response = await api.get(`careers/${id}`);
   return response.data.data;
 };
 
 export const createCareer = async (data: any) => {
-  const response = await api.post('/careers', data);
+  const response = await api.post('careers', data);
   return response.data;
 };
 
 export const updateCareer = async (id: number, data: any) => {
-  const response = await api.put(`/careers/${id}`, data);
+  const response = await api.put(`careers/${id}`, data);
   return response.data;
 };
 
 export const deleteCareer = async (id: number) => {
-  await api.delete(`/careers/${id}`);
+  await api.delete(`careers/${id}`);
 };
 
+export const toggleCareerStatus = async (id: number) => {
+  const response = await api.patch(`careers/${id}/toggle-status`);
+  return response.data;
+};
+
+// Career Types
+export const getCareerTypes = async () => {
+  const response = await api.get('career-types');
+  return response.data?.data || [];
+};
+
+export const createCareerType = async (data: { name: string }) => {
+  const response = await api.post('career-types', data);
+  return response.data;
+};
+
+export const updateCareerType = async (id: number, data: { name: string }) => {
+  const response = await api.put(`career-types/${id}`, data);
+  return response.data;
+};
+
+export const deleteCareerType = async (id: number) => {
+  await api.delete(`career-types/${id}`);
+};
+
+
 export const getContacts = async () => {
-  const response = await api.get('/contacts');
+  const response = await api.get('contacts');
   return response.data;
 };
 
@@ -168,47 +204,57 @@ export const createContact = async (data: any) => {
       formData.append(key, data[key]);
     }
   });
-  const response = await api.post('/contacts', formData, {
+  const response = await api.post('contacts', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
   return response.data;
 };
 
 export const deleteContact = async (id: number) => {
-  await api.delete(`/contacts/${id}`);
+  await api.delete(`contacts/${id}`);
 };
 
 export const getFaqs = async () => {
-  const response = await api.get('/faqs');
-  return response.data;
+  try {
+    const response = await api.get('faqs');
+    return response.data;
+  } catch (error) {
+    console.error("Failed to fetch FAQs:", error);
+    return { data: [] };
+  }
 };
 
 export const getFaq = async (id: number) => {
-  const response = await api.get(`/faqs/${id}`);
+  const response = await api.get(`faqs/${id}`);
   return response.data.data;
 };
 
 export const createFaq = async (data: any) => {
-  const response = await api.post('/faqs', data);
+  const response = await api.post('faqs', data);
   return response.data;
 };
 
 export const updateFaq = async (id: number, data: any) => {
-  const response = await api.put(`/faqs/${id}`, data);
+  const response = await api.put(`faqs/${id}`, data);
   return response.data;
 };
 
 export const deleteFaq = async (id: number) => {
-  await api.delete(`/faqs/${id}`);
+  await api.delete(`faqs/${id}`);
 };
 
 export const getProjects = async () => {
-  const response = await api.get('/projects');
-  return response.data;
+  try {
+    const response = await api.get('projects');
+    return Array.isArray(response.data?.data) ? response.data.data : (Array.isArray(response.data) ? response.data : []);
+  } catch (error) {
+    console.error("Failed to fetch projects:", error);
+    return [];
+  }
 };
 
 export const getProject = async (id: number) => {
-  const response = await api.get(`/projects/${id}`);
+  const response = await api.get(`projects/${id}`);
   return response.data.data;
 };
 
@@ -223,7 +269,7 @@ export const createProject = async (data: any) => {
       }
     }
   });
-  const response = await api.post('/projects', formData, {
+  const response = await api.post('projects', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
   return response.data;
@@ -240,24 +286,29 @@ export const updateProject = async (id: number, data: any) => {
     }
   });
   formData.append('_method', 'PUT');
-  const response = await api.post(`/projects/${id}`, formData, {
+  const response = await api.post(`projects/${id}`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
   return response.data;
 };
 
 export const deleteProject = async (id: number) => {
-  await api.delete(`/projects/${id}`);
+  await api.delete(`projects/${id}`);
 };
 
 // Service API Methods
 export const getServices = async (page: number = 1) => {
-  const response = await api.get(`/services?page=${page}&per_page=10`);
-  return response.data;
+  try {
+    const response = await api.get(`services?page=${page}&per_page=10`);
+    return response.data;
+  } catch (error) {
+    console.error("Failed to fetch services:", error);
+    return { data: [], total_pages: 1 };
+  }
 };
 
 export const getService = async (id: number) => {
-  const response = await api.get(`/services/${id}`);
+  const response = await api.get(`services/${id}`);
   return response.data.data;
 };
 
@@ -277,7 +328,7 @@ export const createService = async (data: any) => {
     }
   });
 
-  const response = await api.post("/services", formData, {
+  const response = await api.post("services", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
 
@@ -301,7 +352,7 @@ export async function updateService(id: number, data: any) {
 
   formData.append("_method", "PUT");
 
-  const response = await api.post(`/services/${id}`, formData, {
+  const response = await api.post(`services/${id}`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
 
@@ -309,25 +360,25 @@ export async function updateService(id: number, data: any) {
 }
 
 export const deleteService = async (id: number) => {
-  await api.delete(`/services/${id}`);
+  await api.delete(`services/${id}`);
 };
 
 //Gallery API Methods
 
 export const getGalleries = async () => {
-  const response = await api.get('/galleries');
+  const response = await api.get('galleries');
   return Array.isArray(response.data)
   ? response.data
   : response.data?.data || [];
 };
 
 export const getGallery = async (id: number) => {
-  const response = await api.get(`/galleries/${id}`);
+  const response = await api.get(`galleries/${id}`);
   return response.data;
 };
 
 export const createGallery = async (data: FormData) => {
-    const response = await api.post('/galleries', data);
+    const response = await api.post('galleries', data);
     return response.data;
   };
 
@@ -337,20 +388,20 @@ export const updateGallery = async (id: number, data: FormData) => {
       data.append('_method', 'PUT');
     }
 
-    const response = await api.post(`/galleries/${id}`, data);
+    const response = await api.post(`galleries/${id}`, data);
     return response.data;
   };
 
 
 export const deleteGallery = async (id: number) => {
-  await api.delete(`/galleries/${id}`);
+  await api.delete(`galleries/${id}`);
 };
 
 //NEWS API METHODS
 
 export const getNews = async (page: number = 1, limit: number = 10) => {
   try {
-    const response = await api.get(`/news?page=${page}&limit=${limit}`);
+    const response = await api.get(`news?page=${page}&limit=${limit}`);
     const payload = response.data;
 
     if (Array.isArray(payload?.data?.data)) {
@@ -376,7 +427,7 @@ export const getNews = async (page: number = 1, limit: number = 10) => {
 };
 export const getNewsItem = async (id: number) => {
   try {
-    const response = await api.get(`/news/${id}`);
+    const response = await api.get(`news/${id}`);
     // Always return the data object, fallback to null
     return response.data?.data || null;
   } catch (error) {
@@ -387,7 +438,7 @@ export const getNewsItem = async (id: number) => {
 
 export const createNews = async (data: FormData) => {
   try {
-    const response = await api.post("/news", data, {
+    const response = await api.post("news", data, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return response.data;
@@ -402,7 +453,7 @@ export const updateNews = async (id: number, formData: FormData) => {
     formData.append("_method", "PUT");
   }
 
-  const response = await api.post(`/news/${id}`, formData, {
+  const response = await api.post(`news/${id}`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
 
@@ -412,7 +463,7 @@ export const updateNews = async (id: number, formData: FormData) => {
 
 export const deleteNews = async (id: number) => {
   try {
-    await api.delete(`/news/${id}`);
+    await api.delete(`news/${id}`);
   } catch (error) {
     console.error(`Failed to delete news ${id}:`, error);
     throw error;
@@ -421,19 +472,22 @@ export const deleteNews = async (id: number) => {
 
 // Testimonials API Methods
 export const getTestimonials = async () => {
-  const response = await api.get('/testimonials');
-  return Array.isArray(response.data)
-    ? response.data
-    : response.data?.data || [];
+  try {
+    const response = await api.get('testimonials');
+    return Array.isArray(response.data?.data) ? response.data.data : (Array.isArray(response.data) ? response.data : []);
+  } catch (error) {
+    console.error("Failed to fetch testimonials:", error);
+    return [];
+  }
 };
 
 export const getTestimonial = async (id: number) => {
-  const response = await api.get(`/testimonials/${id}`);
+  const response = await api.get(`testimonials/${id}`);
   return response.data.data;
 };
 
 export const createTestimonial = async (data: FormData) => {
-  const response = await api.post('/testimonials', data, {
+  const response = await api.post('testimonials', data, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
   return response.data;
@@ -444,21 +498,21 @@ export const updateTestimonial = async (id: number, data: FormData) => {
     data.append('_method', 'PUT');
   }
 
-  const response = await api.post(`/testimonials/${id}`, data, {
+  const response = await api.post(`testimonials/${id}`, data, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
   return response.data;
 };
 
 export const deleteTestimonial = async (id: number) => {
-  await api.delete(`/testimonials/${id}`);
+  await api.delete(`testimonials/${id}`);
 };
 
 //visit counter api
 
 export const trackVisit = async (page: string = "/") => {
   try{
-    await api.post('/track-visit', { page });
+    await api.post('track-visit', { page });
   }catch (error){
     console.error('Error tracking visit:', error);
   }

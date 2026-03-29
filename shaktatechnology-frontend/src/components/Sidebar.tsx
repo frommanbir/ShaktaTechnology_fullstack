@@ -2,11 +2,24 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { ChevronDown } from 'lucide-react';
 
-const navigation = [
+type NavChild = { name: string; href: string };
+type NavItem =
+  | { name: string; href: string; children?: undefined }
+  | { name: string; href: string; children: NavChild[] };
+
+const navigation: NavItem[] = [
   { name: 'Dashboard', href: '/admin' },
-  { name: 'Careers', href: '/admin/careers' },
+  {
+    name: 'Careers',
+    href: '/admin/careers',
+    children: [
+      { name: 'Employment Types', href: '/admin/careers/types' },
+    ],
+  },
   { name: 'Contacts', href: '/admin/contact' },
   { name: 'FAQs', href: '/admin/faqs' },
   { name: 'Members', href: '/admin/members' },
@@ -21,31 +34,128 @@ const navigation = [
 export function Sidebar() {
   const pathname = usePathname();
 
+  // All groups start closed; user opens them manually
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+
+  const toggleGroup = (name: string) => {
+    setOpenGroups((prev) => ({ ...prev, [name]: !prev[name] }));
+  };
+
   return (
-    <aside className="w-64 bg-gray-900 text-white h-screen fixed left-0 top-0 flex flex-col">
-      <div className="p-5 border-b border-gray-700">
-        <h1 className="text-xl font-bold font-poppins">Shakta Admin</h1>
+    <aside className="w-64 bg-gray-900 border-r border-gray-200 text-gray-900 h-screen fixed left-0 top-0 flex flex-col z-40 shadow-[4px_0_24px_-15px_rgba(0,0,0,0.1)]">
+      <div className="h-16 border-b border-gray-200 flex items-center px-6">
+        <h1 className="text-xl font-bold font-poppins text-blue-600 tracking-tight">
+          Shakta <span className="text-white font-extrabold">Admin</span>
+        </h1>
       </div>
-      <nav className="flex-1 p-4 overflow-y-auto">
-        <ul className="space-y-1">
-          {navigation.map((item) => (
-            <li key={item.name}>
-              <Link
-                href={item.href}
-                className={cn(
-                  'block px-4 py-2 rounded-md transition-colors duration-200 font-medium',
-                  pathname === item.href
-                    ? 'bg-gray-800 text-white'
-                    : 'text-gray-400 hover:bg-gray-800 hover:text-white'
-                )}
-              >
-                {item.name}
-              </Link>
-            </li>
-          ))}
-        </ul>
+
+      <nav className="flex-1 p-4 pt-6 overflow-y-auto space-y-6">
+        <div>
+          <p className="px-4 text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-4">
+            Main Management
+          </p>
+          <ul className="space-y-1">
+            {navigation.map((item) => {
+              const hasChildren = !!item.children?.length;
+
+              // Active detection for parent link
+              const isParentActive = hasChildren
+                ? pathname === item.href ||
+                  (pathname.startsWith(item.href) &&
+                    !item.children!.some((c) => pathname === c.href))
+                : item.href === '/admin'
+                ? pathname === '/admin'
+                : pathname === item.href;
+
+              const isGroupOpen = openGroups[item.name] ?? false;
+
+              return (
+                <li key={item.name}>
+                  {hasChildren ? (
+                    <>
+                      {/* Parent row — clickable for both navigation and toggle */}
+                      <div className="flex items-center gap-1">
+                        <Link
+                          href={item.href}
+                          className={cn(
+                            'flex-1 flex items-center px-4 py-2.5 rounded-xl transition-all duration-200 font-semibold text-sm',
+                            isParentActive
+                              ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+                              : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'
+                          )}
+                        >
+                          {item.name}
+                        </Link>
+                        {/* Chevron toggle */}
+                        <button
+                          onClick={() => toggleGroup(item.name)}
+                          className={cn(
+                            'p-2 rounded-lg transition-all duration-200',
+                            isParentActive
+                              ? 'text-white hover:bg-blue-700'
+                              : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'
+                          )}
+                          aria-label="Toggle submenu"
+                        >
+                          <ChevronDown
+                            size={14}
+                            className={cn(
+                              'transition-transform duration-200',
+                              isGroupOpen ? 'rotate-180' : 'rotate-0'
+                            )}
+                          />
+                        </button>
+                      </div>
+
+                      {/* Children */}
+                      <ul
+                        className={cn(
+                          'ml-4 mt-1 space-y-1 border-l border-gray-700 pl-3 overflow-hidden transition-all duration-200',
+                          isGroupOpen ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'
+                        )}
+                      >
+                        {item.children!.map((child) => {
+                          const isChildActive = pathname === child.href;
+                          return (
+                            <li key={child.name}>
+                              <Link
+                                href={child.href}
+                                className={cn(
+                                  'flex items-center px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-200',
+                                  isChildActive
+                                    ? 'bg-blue-600/20 text-blue-400'
+                                    : 'text-gray-500 hover:bg-gray-800 hover:text-gray-300'
+                                )}
+                              >
+                                <span className="w-1 h-1 rounded-full bg-current mr-2 opacity-60" />
+                                {child.name}
+                              </Link>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </>
+                  ) : (
+                    <Link
+                      href={item.href}
+                      className={cn(
+                        'group flex items-center px-4 py-2.5 rounded-xl transition-all duration-200 font-semibold text-sm',
+                        isParentActive
+                          ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20 active:scale-[0.98]'
+                          : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'
+                      )}
+                    >
+                      {item.name}
+                    </Link>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       </nav>
-      <div className="text-xs text-center text-gray-500 p-4 border-t border-gray-800 font-poppins">
+
+      <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-center text-gray-400 py-6 border-t border-gray-200 bg-gray-50/30">
         © {new Date().getFullYear()} Shakta Tech
       </div>
     </aside>

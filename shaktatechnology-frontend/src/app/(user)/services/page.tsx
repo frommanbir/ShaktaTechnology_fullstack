@@ -50,19 +50,19 @@ export default function ServicesPage() {
   }
 
   if (error) {
-    return (
       <main className="text-center py-20 text-red-500 dark:text-red-400">
-        {error}
+        {error && (
+          <div className="text-center mb-8 text-sm text-amber-600 dark:text-amber-400">
+            We couldn’t load all services right now!
+          </div>
+        )}
       </main>
-    );
   }
 
   if (services.length === 0) {
-    return (
       <main className="text-center py-20 text-slate-600 dark:text-slate-300">
-        No services found.
+        We couldn’t load all services right now!
       </main>
-    );
   }
 
   return (

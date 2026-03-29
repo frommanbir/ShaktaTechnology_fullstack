@@ -75,21 +75,9 @@ export default function HomeNews() {
     );
   }
 
-  if (error) {
-    return (
-      <section className="py-16 text-center text-red-500 dark:text-red-400">
-        <p>{error}</p>
-      </section>
-    );
-  }
+  if (error) return null;
 
-  if (news.length === 0) {
-    return (
-      <section className="py-16 text-center text-gray-600 dark:text-gray-400">
-        <p>No news available right now.</p>
-      </section>
-    );
-  }
+  if (news.length === 0) return null;
 
   return (
     <section

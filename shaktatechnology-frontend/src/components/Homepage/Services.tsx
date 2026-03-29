@@ -46,19 +46,9 @@ export default function ServicesPage() {
       </main>
     );
 
-  if (error)
-    return (
-      <main className="text-center py-20 text-red-500 dark:text-red-400">
-        {error}
-      </main>
-    );
+  if (error) return null;
 
-  if (services.length === 0)
-    return (
-      <main className="text-center py-20 text-slate-600 dark:text-slate-300">
-        No services found.
-      </main>
-    );
+  if (services.length === 0) return null;
 
   // Motion variants
   const container: Variants = {

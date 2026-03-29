@@ -29,7 +29,7 @@ const JobList: React.FC = () => {
         setLoading(true);
         const data = await getCareers();
         if (Array.isArray(data)) {
-          setCareers(data);
+          setCareers(data.filter((c: any) => !!c.is_active));
         } else {
           setCareers([]);
         }

@@ -77,7 +77,7 @@ export default function Footer() {
               <span className="text-purple-600 dark:text-purple-400">Shakta</span>
               <span className="text-gray-900 dark:text-white">Technology</span>
             </motion.h2>
-            <p className="mt-4 text-gray-600 dark:text-gray-400">
+            <p className="mt-4 text-gray-600 dark:text-gray-400 text-justify">
               Empowering businesses with cutting-edge software solutions and digital transformation services.
             </p>
 

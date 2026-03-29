@@ -13,14 +13,8 @@ interface Faq {
   category?: string;
 }
 
-const fallbackFaqs: Faq[] = [
-  { id: 1, question: "What services do you offer?", answer: "We provide comprehensive digital solutions including web development, mobile apps, cloud services, and digital transformation consulting tailored to your business needs." },
-  { id: 2, question: "How long does a typical project take?", answer: "Project timelines vary based on complexity. Simple websites take 2–4 weeks, while complex applications can take 3–6 months. We provide detailed timelines during our initial consultation." },
-  { id: 3, question: "Do you provide ongoing support?", answer: "Yes, we offer comprehensive support and maintenance packages to ensure your digital solutions continue to perform optimally after launch." },
-  { id: 4, question: "What technologies do you work with?", answer: "We work with modern technologies including React, Next.js, Node.js, Python, AWS, and more. We choose the best stack for your specific project requirements." },
-  { id: 5, question: "How do you handle project communication?", answer: "We maintain regular communication through weekly updates, dedicated project management tools, and are always available for urgent queries via phone or email." },
-  { id: 6, question: "What is your pricing structure?", answer: "We offer flexible pricing models including fixed-price projects, time-and-materials, and dedicated team options. We provide transparent quotes with no hidden costs." },
-];
+// No fallback FAQs anymore as per user request to hide empty sections
+
 
 export default function FAQ() {
   const [faqs, setFaqs] = useState<Faq[]>([]);
@@ -36,12 +30,10 @@ export default function FAQ() {
         setLoading(true);
         const data = await getFaqs();
         const faqsData = data?.data || data || [];
-        if (faqsData.length > 0) setFaqs(faqsData);
-        else throw new Error("No FAQs available");
+        setFaqs(faqsData);
       } catch (error) {
         console.error("Failed to fetch FAQs:", error);
         setError("Unable to load FAQs at this time");
-        setFaqs(fallbackFaqs);
       } finally {
         setLoading(false);
       }
@@ -53,7 +45,9 @@ export default function FAQ() {
     setOpenIndex((prev) => (prev === index ? null : index));
   }, []);
 
-  const filteredFaqs = faqs.filter(
+  const faqsList = Array.isArray(faqs) ? faqs : [];
+
+  const filteredFaqs = faqsList.filter(
     (faq) =>
       faq.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
       faq.answer.toLowerCase().includes(searchTerm.toLowerCase())
@@ -70,6 +64,8 @@ export default function FAQ() {
     );
   }
 
+  if (faqs.length === 0) return null;
+
   return (
     <section
       className="py-16 lg:py-24 px-4 sm:px-6 lg:px-8 bg-gray-50 dark:bg-gray-900 transition-colors duration-300"
@@ -85,11 +81,6 @@ export default function FAQ() {
             Got questions? We've got answers. Here are some of the most common ones we receive.
           </p>
 
-          {error && (
-            <p className="mt-4 text-amber-600 dark:text-amber-400 text-sm bg-amber-50 dark:bg-amber-900/30 inline-block px-4 py-2 rounded-lg">
-              {error} (Showing demo FAQs)
-            </p>
-          )}
         </div>
 
         {/* FAQ Items */}

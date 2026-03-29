@@ -14,6 +14,9 @@ import {
   Trash,
 } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
+import { TableSkeleton, TableEmptyState } from "@/components/ui/table-skeleton";
+import { Pagination } from "@/components/ui/pagination";
 import {
   Document,
   Packer,
@@ -350,158 +353,137 @@ export default function AdminMembersPage() {
             <SearchBar onSearch={handleSearch} placeholder="Search members..." />
           </div>
 
-          <a
+          <Link
             href="/admin/members/add"
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
           >
             Add New Member
-          </a>
+          </Link>
         </div>
 
-        {/* Loader */}
-        {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <Loader2 className="animate-spin h-12 w-12 text-blue-600 dark:text-blue-400" />
-          </div>
-        ) : members.length === 0 ? (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center">
-            <p className="text-gray-600 dark:text-gray-400">
-              No members found.
-            </p>
-            <a
-              href="/admin/members/add"
-              className="inline-block mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
-              Add New Member
-            </a>
-          </div>
-        ) : (
-          <>
-            {/* Members Table */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-              <table className="w-full">
-                <thead className="bg-gray-50 dark:bg-gray-700">
-                  <tr>
-                    <th className="py-3 px-4 text-left font-medium text-gray-700 dark:text-gray-300">
-                      Image
-                    </th>
-                    <th className="py-3 px-4 text-left font-medium text-gray-700 dark:text-gray-300">
-                      Name
-                    </th>
-                    <th className="py-3 px-4 text-left font-medium text-gray-700 dark:text-gray-300">
-                      Email
-                    </th>
-                    <th className="py-3 px-4 text-left font-medium text-gray-700 dark:text-gray-300">
-                      Department
-                    </th>
-                    <th className="py-3 px-4 text-left font-medium text-gray-700 dark:text-gray-300">
-                      Position
-                    </th>
-                    <th className="py-3 px-4 text-left font-medium text-gray-700 dark:text-gray-300">
-                      Actions
-                    </th>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+          <table className="w-full">
+            <thead className="bg-gray-50 dark:bg-gray-700">
+              <tr>
+                <th className="py-3 px-4 text-left font-medium text-gray-700 dark:text-gray-300">
+                  S.N
+                </th>
+                <th className="py-3 px-4 text-left font-medium text-gray-700 dark:text-gray-300">
+                  Image
+                </th>
+                <th className="py-3 px-4 text-left font-medium text-gray-700 dark:text-gray-300">
+                  Name
+                </th>
+                <th className="py-3 px-4 text-left font-medium text-gray-700 dark:text-gray-300">
+                  Email
+                </th>
+                <th className="py-3 px-4 text-left font-medium text-gray-700 dark:text-gray-300">
+                  Department
+                </th>
+                <th className="py-3 px-4 text-left font-medium text-gray-700 dark:text-gray-300">
+                  Position
+                </th>
+                <th className="py-3 px-4 text-left font-medium text-gray-700 dark:text-gray-300">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+              {loading ? (
+                <TableSkeleton rows={limit} columns={6} showImage={true} />
+              ) : members.length === 0 ? (
+                <TableEmptyState 
+                  message={
+                    <>
+                      No members found.{" "}
+                      <Link href="/admin/members/add" className="text-blue-600 hover:underline">
+                        Add the first one
+                      </Link>
+                    </>
+                  } 
+                  colSpan={7} 
+                />
+              ) : (
+                members.map((member, index) => (
+                  <tr
+                    key={member.id}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    <td className="py-2 px-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 font-medium">
+                      {(page - 1) * limit + index + 1}
+                    </td>
+                    <td className="py-2 px-4">
+                      {member.image ? (
+                        <Image
+                          src={member.image}
+                          alt={member.name}
+                          width={40}
+                          height={40}
+                          className="rounded-full cursor-pointer object-cover"
+                          loading="lazy"
+                          onClick={() =>
+                            handleImageClick(`${storageUrl}members/${member.image}`)
+                          }
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-gray-600 dark:text-gray-300 text-xs font-medium">
+                          {member.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")
+                            .toUpperCase()}
+                        </div>
+                      )}
+                    </td>
+                    <td className="py-2 px-4 text-gray-900 dark:text-gray-100">
+                      {member.name}
+                    </td>
+                    <td className="py-2 px-4 text-gray-600 dark:text-gray-400">
+                      {member.email}
+                    </td>
+                    <td className="py-2 px-4 text-gray-600 dark:text-gray-400">
+                      {member.department || "-"}
+                    </td>
+                    <td className="py-2 px-4 text-gray-600 dark:text-gray-400">
+                      {member.position || "-"}
+                    </td>
+                    <td className="py-2 px-4 flex gap-2">
+                      <button
+                        onClick={() => openMemberProfile(member)}
+                        className="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 text-sm flex items-center transition-colors"
+                        title="Profile"
+                      >
+                        <User size={16} />
+                      </button>
+                      <Link
+                        href={`/admin/members/${member.id}/edit`}
+                        className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-md hover:bg-blue-200 dark:hover:bg-blue-800 text-sm flex items-center transition-colors"
+                        title="Edit"
+                      >
+                        <Pencil size={16} />
+                      </Link>
+                      <button
+                        onClick={() => openDeleteConfirmation(member)}
+                        className="px-3 py-1 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded-md hover:bg-red-200 dark:hover:bg-red-800 text-sm flex items-center transition-colors"
+                        title="Delete"
+                      >
+                        <Trash size={16} />
+                      </button>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {members.map((member) => (
-                    <tr
-                      key={member.id}
-                      className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                    >
-                      <td className="py-2 px-4">
-                        {member.image ? (
-                          <Image
-                            src={member.image}
-                            alt={member.name}
-                            width={40}
-                            height={40}
-                            className="rounded-full cursor-pointer object-cover"
-                            loading="lazy"
-                            onClick={() =>
-                              handleImageClick(`${storageUrl}members/${member.image}`)
-                            }
-                          />
-                        ) : (
-                          <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-gray-600 dark:text-gray-300 text-xs font-medium">
-                            {member.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")
-                              .toUpperCase()}
-                          </div>
-                        )}
-                      </td>
-                      <td className="py-2 px-4 text-gray-900 dark:text-gray-100">
-                        {member.name}
-                      </td>
-                      <td className="py-2 px-4 text-gray-600 dark:text-gray-400">
-                        {member.email}
-                      </td>
-                      <td className="py-2 px-4 text-gray-600 dark:text-gray-400">
-                        {member.department || "-"}
-                      </td>
-                      <td className="py-2 px-4 text-gray-600 dark:text-gray-400">
-                        {member.position || "-"}
-                      </td>
-                      <td className="py-2 px-4 flex gap-2">
-                        <button
-                          onClick={() => openMemberProfile(member)}
-                          className="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 text-sm flex items-center transition-colors"
-                          title="Profile"
-                        >
-                          <User size={16} />
-                        </button>
-                        <a
-                          href={`/admin/members/${member.id}/edit`}
-                          className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-md hover:bg-blue-200 dark:hover:bg-blue-800 text-sm flex items-center transition-colors"
-                          title="Edit"
-                        >
-                          <Pencil size={16} />
-                        </a>
-                        <button
-                          onClick={() => openDeleteConfirmation(member)}
-                          className="px-3 py-1 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded-md hover:bg-red-200 dark:hover:bg-red-800 text-sm flex items-center transition-colors"
-                          title="Delete"
-                        >
-                          <Trash size={16} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
 
-            {/* Pagination */}
-            <div className="flex justify-between items-center mt-6">
-              <button
-                onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-                disabled={page === 1}
-                className={`px-4 py-2 rounded-md transition-colors ${
-                  page === 1
-                    ? "bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed"
-                    : "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600"
-                }`}
-              >
-                Previous
-              </button>
-              <span className="text-gray-700 dark:text-gray-300">
-                Page {page} of {totalPages}
-              </span>
-              <button
-                onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
-                disabled={page === totalPages}
-                className={`px-4 py-2 rounded-md transition-colors ${
-                  page === totalPages
-                    ? "bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed"
-                    : "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600"
-                }`}
-              >
-                Next
-              </button>
-            </div>
-          </>
-        )}
+        <Pagination
+          currentPage={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          totalItems={members.length * totalPages}
+          itemsPerPage={limit}
+        />
 
         {/* Delete Confirmation Modal */}
         <Transition show={!!memberToDelete} as={Fragment}>
@@ -621,14 +603,14 @@ export default function AdminMembersPage() {
                         <div className="flex-shrink-0">
                           {selectedMember.image ? (
                             <Image
-                              src={`${storageUrl}members/${selectedMember.image}`}
+                              src={selectedMember.image}
                               alt={selectedMember.name}
                               width={128}
                               height={128}
                               className="rounded-full object-cover mx-auto cursor-pointer"
                               onClick={() =>
                                 handleImageClick(
-                                  `${storageUrl}members/${selectedMember.image}`
+                                  selectedMember.image!
                                 )
                               }
                             />
@@ -801,73 +783,6 @@ export default function AdminMembersPage() {
                         </div>
                       </div>
                     </>
-                  )}
-
-                  <div className="flex justify-end mt-6 space-x-3">
-                    <button
-                      onClick={() => exportMemberToWord(selectedMember!)}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                    >
-                      Export as CV
-                    </button>
-                    <button
-                      onClick={closeMemberProfile}
-                      className="px-4 py-2 bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-400 dark:hover:bg-gray-600 transition-colors"
-                    >
-                      Close
-                    </button>
-                  </div>
-                </Dialog.Panel>
-              </Transition.Child>
-            </div>
-          </Dialog>
-        </Transition>
-
-        {/* Image Viewer Modal */}
-        <Transition show={!!viewImage} as={Fragment}>
-          <Dialog as="div" className="relative z-50" onClose={closeImageView}>
-            <Transition.Child
-              as={Fragment}
-              enter="ease-out duration-300"
-              enterFrom="opacity-0"
-              enterTo="opacity-100"
-              leave="ease-in duration-200"
-              leaveFrom="opacity-100"
-              leaveTo="opacity-0"
-            >
-              <div className="fixed inset-0 bg-black bg-opacity-75" />
-            </Transition.Child>
-
-            <div className="fixed inset-0 flex items-center justify-center p-4">
-              <Transition.Child
-                as={Fragment}
-                enter="ease-out duration-300"
-                enterFrom="opacity-0 scale-95"
-                enterTo="opacity-100 scale-100"
-                leave="ease-in duration-200"
-                leaveFrom="opacity-100 scale-100"
-                leaveTo="opacity-0 scale-95"
-              >
-                <Dialog.Panel className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full p-4 shadow-xl">
-                  <div className="flex justify-between items-center mb-4">
-                    <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-white">
-                      Profile Image
-                    </Dialog.Title>
-                    <button
-                      onClick={closeImageView}
-                      className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-2xl"
-                    >
-                      ×
-                    </button>
-                  </div>
-                  {viewImage && (
-                    <Image
-                      src={viewImage}
-                      alt="Member"
-                      width={800}
-                      height={800}
-                      className="w-full h-auto rounded-md object-contain"
-                    />
                   )}
                 </Dialog.Panel>
               </Transition.Child>

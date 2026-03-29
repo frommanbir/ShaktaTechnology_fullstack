@@ -201,7 +201,7 @@ export default function Contact() {
                 <input
                   type="text"
                   name="project_budget"
-                  placeholder="e.g., $10,000"
+                  placeholder="e.g., NPR 10,000"
                   value={form.project_budget}
                   onChange={handleChange}
                   className="border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 focus:ring focus:ring-indigo-200 dark:focus:ring-indigo-400"

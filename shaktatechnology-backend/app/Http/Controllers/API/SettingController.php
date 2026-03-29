@@ -20,9 +20,7 @@ class SettingController extends Controller
             $settings = Setting::first();
 
             if (!$settings) {
-                return response()->json([
-                    'message' => 'Data not found'
-                ], 404);
+                return response()->json([], 200);
             }
 
             // Increment visits on each fetch

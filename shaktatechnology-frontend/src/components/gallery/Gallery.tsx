@@ -59,7 +59,6 @@ export default function GalleryPage() {
 
         {galleries.length === 0 ? (
           <p className="text-gray-500 dark:text-gray-400">
-            No gallery items available.
           </p>
         ) : (
           <motion.div

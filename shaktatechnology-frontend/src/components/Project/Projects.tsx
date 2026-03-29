@@ -28,8 +28,11 @@ export default function Projects() {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const response = await getProjects();
-        setProjects(response.data);
+        const data = await getProjects();
+        const sortedProjects = (data || []).sort((a: Project, b: Project) =>
+          new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+        );
+        setProjects(sortedProjects);
       } catch (error) {
         console.error("Failed to fetch projects:", error);
       } finally {

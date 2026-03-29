@@ -15,6 +15,11 @@ class Career extends Model
         'type',
         'description',
         'requirements',
-        'benefits'
+        'benefits',
+        'is_active',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
     ];
 }
