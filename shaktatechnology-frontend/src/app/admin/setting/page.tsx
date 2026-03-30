@@ -69,20 +69,21 @@ export default function AdminSettingsPage() {
       setError("");
       try {
         const data = await getSettings();
-        setSettings(data);
+        const settingsData = data && data.id ? data : null;
+        setSettings(settingsData);
         setFormData({
-          company_name: data.company_name || "",
-          phone: data.phone || "",
-          email: data.email || "",
-          address: data.address || "",
+          company_name: settingsData?.company_name || "",
+          phone: settingsData?.phone || "",
+          email: settingsData?.email || "" ,
+          address: settingsData?.address || "",
           logo: null,
-          website: data.website || "",
-          linkedin: data.linkedin || "",
-          instagram: data.instagram || "",
-          facebook: data.facebook || "",
-          twitter: data.twitter || "",
-          about: data.about || "",
-          visits: Number(data.visits ?? 0),
+          website: settingsData?.website || "",
+          linkedin: settingsData?.linkedin || "",
+          instagram: settingsData?.instagram || "",
+          facebook: settingsData?.facebook || "",
+          twitter: settingsData?.twitter || "",
+          about: settingsData?.about || "",
+          visits: Number(settingsData?.visits ?? 0),
         });
       } catch (err: any) {
         setError(err.response?.data?.message || "Failed to fetch settings");
@@ -115,7 +116,7 @@ export default function AdminSettingsPage() {
 
     try {
       let newSettings: Setting;
-      if (settings) {
+      if (settings && settings.id) {
         const res = await updateSettings(settings.id, formData);
         newSettings = res.data;
         setSettings(newSettings);
@@ -148,7 +149,7 @@ export default function AdminSettingsPage() {
   };
 
   const handleDelete = async () => {
-    if (!settings) return;
+    if (!settings || !settings.id) return;
     setIsDeleting(true);
     try {
       await deleteSettings(settings.id);
@@ -327,7 +328,7 @@ export default function AdminSettingsPage() {
 
           {/* Action Buttons */}
           <div className="flex justify-end space-x-3">
-            {settings && !isEditing ? (
+            {settings && settings.id && !isEditing ? (
               <>
                 <button type="button" onClick={() => setIsEditing(true)} className="px-4 py-2 bg-blue-600 text-white rounded-md">
                   Edit

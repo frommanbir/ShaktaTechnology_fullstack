@@ -12,7 +12,7 @@ use App\Http\Controllers\API\SettingController;
 use App\Http\Controllers\API\GalleryController;
 use App\Http\Controllers\API\NewsController;
 use App\Http\Controllers\TestimonialController;
-use App\Http\Controllers\VisitController;
+use App\Http\Controllers\API\VisitController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -21,6 +21,8 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
 
 // Public routes (no authentication required)
+Route::post('/track-visit', [VisitController::class, 'track']);
+Route::get('/track-visit', [VisitController::class, 'index']);
 Route::get('/services', [ServiceController::class, 'index']);
 Route::get('/services/{id}', [ServiceController::class, 'show']);
 

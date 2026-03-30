@@ -23,9 +23,6 @@ class SettingController extends Controller
                 return response()->json([], 200);
             }
 
-            // Increment visits on each fetch
-            $settings->increment('visits');
-
             return response()->json($settings);
         } catch (Exception $e) {
             Log::error('Failed to fetch settings: ' . $e->getMessage());
