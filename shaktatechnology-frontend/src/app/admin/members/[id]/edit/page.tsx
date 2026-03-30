@@ -1,13 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { getMember, updateMember } from "@/lib/api";
 import { useRouter, useParams } from "next/navigation";
+import { Loader2, Upload, X, User, Briefcase, Share2, Info } from "lucide-react";
+import { toast } from "sonner";
+import Image from "next/image";
+import TextEditor from "@/components/global/TextEditor";
+
+type TabType = "general" | "professional" | "social" | "about";
 
 export default function EditMemberPage() {
   const router = useRouter();
   const params = useParams();
   const id = Number(params.id);
+  const [activeTab, setActiveTab] = useState<TabType>("general");
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -22,14 +30,15 @@ export default function EditMemberPage() {
     facebook: "",
     instagram: "",
     github: "",
-    address: "", 
-    short_description: "", 
-    training: "", 
+    address: "",
     education: "",
-    reference: "", 
+    member_order: "",
     image: null as File | null,
   });
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  const [preview, setPreview] = useState<string | null>(null);
+  const [existingImage, setExistingImage] = useState<string | null>(null);
+  const [removeExistingImage, setRemoveExistingImage] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -51,15 +60,16 @@ export default function EditMemberPage() {
           facebook: member.facebook || "",
           instagram: member.instagram || "",
           github: member.github || "",
-          address: member.address || "", 
-          short_description: member.short_description || "", 
-          training: member.training || "", 
-          education: member.education || "", 
-          reference: member.reference || "", 
+          address: member.address || "",
+          education: member.education || "",
+          member_order: member.member_order ? member.member_order.toString() : "",
           image: null,
         });
+        if (member.image) {
+          setExistingImage(member.image);
+        }
       } catch (err) {
-        setErrors({ general: "Failed to load member" });
+        toast.error("Failed to load member");
       } finally {
         setLoading(false);
       }
@@ -70,311 +80,392 @@ export default function EditMemberPage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear error for this field when user types
-    setErrors((prev) => ({ ...prev, [name]: "" }));
+  };
+
+  const handleEditorChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, about: value }));
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
-    setFormData((prev) => ({ ...prev, image: file }));
-    setErrors((prev) => ({ ...prev, image: "" }));
+    if (file) {
+      if (file.size > 4 * 1024 * 1024) {
+        toast.error("Image size should be less than 4MB");
+        return;
+      }
+      setFormData((prev) => ({ ...prev, image: file }));
+      setPreview(URL.createObjectURL(file));
+      setRemoveExistingImage(false);
+    }
+  };
+
+  const handleRemovePreview = () => {
+    setFormData((prev) => ({ ...prev, image: null }));
+    setPreview(null);
+  };
+
+  const handleRemoveExisting = () => {
+    setExistingImage(null);
+    setRemoveExistingImage(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrors({});
+    if (!formData.name || !formData.email) {
+      toast.error("Name and Email are required");
+      return;
+    }
+
     setSubmitting(true);
 
     try {
-      const data = new FormData();
-      Object.entries(formData).forEach(([key, value]) => {
-        if (key === "image" && value) {
-          data.append(key, value);
-        } else if (value) {
-          data.append(key, value as string);
-        }
-      });
+      // Create a plain object for updateMember, which will handle its own FormData wrapping
+      const dataToSubmit: any = { ...formData };
+      
+      // If we are removing the image, explicitly set the flag
+      if (removeExistingImage && !formData.image) {
+        dataToSubmit.remove_image = "true";
+      }
 
-      await updateMember(id, data);
+      await updateMember(id, dataToSubmit);
+      toast.success("Member updated successfully");
       router.push("/admin/members");
     } catch (err: any) {
-      if (err.response?.data?.errors) {
-        // Handle validation errors from backend
-        const backendErrors: { [key: string]: string } = {};
-        Object.entries(err.response.data.errors).forEach(([key, messages]) => {
-          backendErrors[key] = (messages as string[]).join(", ");
-        });
-        setErrors(backendErrors);
+      console.error("Error:", err.response?.data);
+      const backendErrors = err.response?.data?.errors;
+      if (backendErrors) {
+        Object.values(backendErrors).flat().forEach((msg: any) => toast.error(msg));
       } else {
-        setErrors({ general: err.response?.data?.message || "Failed to update member" });
+        toast.error(err.response?.data?.message || "Failed to update member");
       }
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (loading) return <div className="p-6">Loading...</div>;
+  const tabs = [
+    { id: "general", name: "General Info", icon: User },
+    { id: "professional", name: "Professional", icon: Briefcase },
+    { id: "social", name: "Social Media", icon: Share2 },
+    { id: "about", name: "Biography", icon: Info },
+  ];
+
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-screen">
+      <Loader2 className="w-12 h-12 animate-spin text-blue-600" />
+    </div>
+  );
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">Edit Member</h1>
-
-      {errors.general && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          {errors.general}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Column 1 */}
-        <div>
-          <label className="block text-gray-700 mb-2">Name *</label>
-          <input
-            type="text"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            className={`w-full px-3 py-2 border rounded-md ${errors.name ? "border-red-500" : ""}`}
-            required
-          />
-          {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-8 transition-colors">
+      <div className="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden">
+        <div className="bg-blue-600 p-6">
+          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+            <User className="w-6 h-6" />
+            Edit Member: {formData.name}
+          </h1>
+          <p className="text-blue-100 text-sm mt-1">Update the profile of this team member.</p>
         </div>
 
-        <div>
-          <label className="block text-gray-700 mb-2">Email *</label>
-          <input
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            className={`w-full px-3 py-2 border rounded-md ${errors.email ? "border-red-500" : ""}`}
-            required
-          />
-          {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+        {/* Tab Navigation */}
+        <div className="flex border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 overflow-x-auto">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id as TabType)}
+              className={`flex items-center gap-2 px-6 py-4 text-sm font-medium transition-all border-b-2 whitespace-nowrap ${
+                activeTab === tab.id
+                  ? "border-blue-600 text-blue-600 bg-white dark:bg-gray-800"
+                  : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              }`}
+            >
+              <tab.icon className="w-4 h-4" />
+              {tab.name}
+            </button>
+          ))}
         </div>
 
-        <div>
-          <label className="block text-gray-700 mb-2">Phone</label>
-          <input
-            type="text"
-            name="phone"
-            value={formData.phone}
-            onChange={handleChange}
-            className={`w-full px-3 py-2 border rounded-md ${errors.phone ? "border-red-500" : ""}`}
-          />
-          {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
-        </div>
+        <form onSubmit={handleSubmit} className="p-6 md:p-8">
+          <div className="min-h-[350px]">
+            {activeTab === "general" && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fadeIn">
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 transition-all text-gray-900 dark:text-white"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      Email <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 transition-all text-gray-900 dark:text-white"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      Phone Number
+                    </label>
+                    <input
+                      type="text"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 transition-all text-gray-900 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      Member Order
+                    </label>
+                    <input
+                      type="number"
+                      name="member_order"
+                      value={formData.member_order}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 transition-all text-gray-900 dark:text-white"
+                    />
+                  </div>
+                </div>
 
-        <div>
-          <label className="block text-gray-700 mb-2">Address</label>
-          <input
-            type="text"
-            name="address"
-            value={formData.address}
-            onChange={handleChange}
-            className={`w-full px-3 py-2 border rounded-md ${errors.address ? "border-red-500" : ""}`}
-          />
-          {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address}</p>}
-        </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      Address
+                    </label>
+                    <input
+                      type="text"
+                      name="address"
+                      value={formData.address}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 transition-all text-gray-900 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                      Profile Image
+                    </label>
+                    {!preview && !existingImage ? (
+                      <div className="relative border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-6 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all cursor-pointer group">
+                        <input
+                          type="file"
+                          onChange={handleFileChange}
+                          accept="image/*"
+                          className="absolute inset-0 opacity-0 cursor-pointer"
+                        />
+                        <div className="flex flex-col items-center justify-center gap-2">
+                          <Upload className="w-8 h-8 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                          <p className="text-sm text-gray-500">Click to upload new image</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="relative w-40 h-40 group">
+                        <img
+                          src={preview || existingImage!}
+                          alt="Profile Preview"
+                          className="w-full h-full object-cover rounded-xl shadow-md border-2 border-white dark:border-gray-700"
+                        />
+                        <button
+                          type="button"
+                          onClick={preview ? handleRemovePreview : handleRemoveExisting}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-lg hover:bg-red-600 transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
-        <div>
-          <label className="block text-gray-700 mb-2">Department</label>
-          <input
-            type="text"
-            name="department"
-            value={formData.department}
-            onChange={handleChange}
-            className={`w-full px-3 py-2 border rounded-md ${errors.department ? "border-red-500" : ""}`}
-          />
-          {errors.department && <p className="text-red-500 text-sm mt-1">{errors.department}</p>}
-        </div>
+            {activeTab === "professional" && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fadeIn">
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      Department
+                    </label>
+                    <input
+                      type="text"
+                      name="department"
+                      value={formData.department}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 transition-all text-gray-900 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      Position
+                    </label>
+                    <input
+                      type="text"
+                      name="position"
+                      value={formData.position}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 transition-all text-gray-900 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      Core Role
+                    </label>
+                    <input
+                      type="text"
+                      name="role"
+                      value={formData.role}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 transition-all text-gray-900 dark:text-white"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      Experience Summary
+                    </label>
+                    <textarea
+                      name="experience"
+                      value={formData.experience}
+                      onChange={handleChange}
+                      rows={2}
+                      className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 transition-all text-gray-900 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      Projects Involved
+                    </label>
+                    <textarea
+                      name="projects_involved"
+                      value={formData.projects_involved}
+                      onChange={handleChange}
+                      rows={2}
+                      className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 transition-all text-gray-900 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      Education
+                    </label>
+                    <input
+                      type="text"
+                      name="education"
+                      value={formData.education}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 transition-all text-gray-900 dark:text-white"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
 
-        <div>
-          <label className="block text-gray-700 mb-2">Position</label>
-          <input
-            type="text"
-            name="position"
-            value={formData.position}
-            onChange={handleChange}
-            className={`w-full px-3 py-2 border rounded-md ${errors.position ? "border-red-500" : ""}`}
-          />
-          {errors.position && <p className="text-red-500 text-sm mt-1">{errors.position}</p>}
-        </div>
+            {activeTab === "social" && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fadeIn">
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      LinkedIn URL
+                    </label>
+                    <input
+                      type="url"
+                      name="linkedin"
+                      value={formData.linkedin}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 transition-all text-gray-900 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      GitHub URL
+                    </label>
+                    <input
+                      type="url"
+                      name="github"
+                      value={formData.github}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 transition-all text-gray-900 dark:text-white"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      Facebook URL
+                    </label>
+                    <input
+                      type="url"
+                      name="facebook"
+                      value={formData.facebook}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 transition-all text-gray-900 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      Instagram URL
+                    </label>
+                    <input
+                      type="url"
+                      name="instagram"
+                      value={formData.instagram}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 transition-all text-gray-900 dark:text-white"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
 
-        <div>
-          <label className="block text-gray-700 mb-2">Role</label>
-          <input
-            type="text"
-            name="role"
-            value={formData.role}
-            onChange={handleChange}
-            className={`w-full px-3 py-2 border rounded-md ${errors.role ? "border-red-500" : ""}`}
-          />
-          {errors.role && <p className="text-red-500 text-sm mt-1">{errors.role}</p>}
-        </div>
+            {activeTab === "about" && (
+              <div className="space-y-4 animate-fadeIn">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                   Biography
+                  </label>
+                  <TextEditor 
+                    content={formData.about} 
+                    onChange={handleEditorChange} 
+                  />
+                </div>
+              </div>
+            )}
+          </div>
 
-        <div>
-          <label className="block text-gray-700 mb-2">Experience</label>
-          <input
-            type="text"
-            name="experience"
-            value={formData.experience}
-            onChange={handleChange}
-            className={`w-full px-3 py-2 border rounded-md ${errors.experience ? "border-red-500" : ""}`}
-          />
-          {errors.experience && <p className="text-red-500 text-sm mt-1">{errors.experience}</p>}
-        </div>
-
-        <div>
-          <label className="block text-gray-700 mb-2">Projects Involved</label>
-          <input
-            type="text"
-            name="projects_involved"
-            value={formData.projects_involved}
-            onChange={handleChange}
-            className={`w-full px-3 py-2 border rounded-md ${errors.projects_involved ? "border-red-500" : ""}`}
-          />
-          {errors.projects_involved && <p className="text-red-500 text-sm mt-1">{errors.projects_involved}</p>}
-        </div>
-
-        <div>
-          <label className="block text-gray-700 mb-2">Reference</label>
-          <input
-            type="text"
-            name="reference"
-            value={formData.reference}
-            onChange={handleChange}
-            className={`w-full px-3 py-2 border rounded-md ${errors.reference ? "border-red-500" : ""}`}
-          />
-          {errors.reference && <p className="text-red-500 text-sm mt-1">{errors.reference}</p>}
-        </div>
-
-        {/* Column 2 */}
-        <div className="md:col-span-2">
-          <label className="block text-gray-700 mb-2">Short Description</label>
-          <textarea
-            name="short_description"
-            value={formData.short_description}
-            onChange={handleChange}
-            className={`w-full px-3 py-2 border rounded-md ${errors.short_description ? "border-red-500" : ""}`}
-            rows={3}
-          />
-          {errors.short_description && <p className="text-red-500 text-sm mt-1">{errors.short_description}</p>}
-        </div>
-
-        <div className="md:col-span-2">
-          <label className="block text-gray-700 mb-2">About</label>
-          <textarea
-            name="about"
-            value={formData.about}
-            onChange={handleChange}
-            className={`w-full px-3 py-2 border rounded-md ${errors.about ? "border-red-500" : ""}`}
-            rows={4}
-          />
-          {errors.about && <p className="text-red-500 text-sm mt-1">{errors.about}</p>}
-        </div>
-
-        <div className="md:col-span-2">
-          <label className="block text-gray-700 mb-2">Training</label>
-          <textarea
-            name="training"
-            value={formData.training}
-            onChange={handleChange}
-            className={`w-full px-3 py-2 border rounded-md ${errors.training ? "border-red-500" : ""}`}
-            rows={4}
-          />
-          {errors.training && <p className="text-red-500 text-sm mt-1">{errors.training}</p>}
-        </div>
-
-        <div className="md:col-span-2">
-          <label className="block text-gray-700 mb-2">Education</label>
-          <textarea
-            name="education"
-            value={formData.education}
-            onChange={handleChange}
-            className={`w-full px-3 py-2 border rounded-md ${errors.education ? "border-red-500" : ""}`}
-            rows={4}
-          />
-          {errors.education && <p className="text-red-500 text-sm mt-1">{errors.education}</p>}
-        </div>
-
-        <div>
-          <label className="block text-gray-700 mb-2">LinkedIn</label>
-          <input
-            type="url"
-            name="linkedin"
-            value={formData.linkedin}
-            onChange={handleChange}
-            className={`w-full px-3 py-2 border rounded-md ${errors.linkedin ? "border-red-500" : ""}`}
-          />
-          {errors.linkedin && <p className="text-red-500 text-sm mt-1">{errors.linkedin}</p>}
-        </div>
-
-        <div>
-          <label className="block text-gray-700 mb-2">Facebook</label>
-          <input
-            type="url"
-            name="facebook"
-            value={formData.facebook}
-            onChange={handleChange}
-            className={`w-full px-3 py-2 border rounded-md ${errors.facebook ? "border-red-500" : ""}`}
-          />
-          {errors.facebook && <p className="text-red-500 text-sm mt-1">{errors.facebook}</p>}
-        </div>
-
-        <div>
-          <label className="block text-gray-700 mb-2">Instagram</label>
-          <input
-            type="url"
-            name="instagram"
-            value={formData.instagram}
-            onChange={handleChange}
-            className={`w-full px-3 py-2 border rounded-md ${errors.instagram ? "border-red-500" : ""}`}
-          />
-          {errors.instagram && <p className="text-red-500 text-sm mt-1">{errors.instagram}</p>}
-        </div>
-
-        <div>
-          <label className="block text-gray-700 mb-2">GitHub</label>
-          <input
-            type="url"
-            name="github"
-            value={formData.github}
-            onChange={handleChange}
-            className={`w-full px-3 py-2 border rounded-md ${errors.github ? "border-red-500" : ""}`}
-          />
-          {errors.github && <p className="text-red-500 text-sm mt-1">{errors.github}</p>}
-        </div>
-
-        <div className="md:col-span-2">
-          <label className="block text-gray-700 mb-2">Image (upload new to replace)</label>
-          <input
-            type="file"
-            name="image"
-            onChange={handleFileChange}
-            className={`w-full px-3 py-2 border rounded-md ${errors.image ? "border-red-500" : ""}`}
-            accept="image/*"
-          />
-          {errors.image && <p className="text-red-500 text-sm mt-1">{errors.image}</p>}
-        </div>
-
-        <div className="md:col-span-2 flex justify-end space-x-4">
-          <button
-            type="button"
-            onClick={() => router.push("/admin/members")}
-            className="px-4 py-2 bg-gray-300 rounded-md hover:bg-gray-400"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={submitting}
-            className={`px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50`}
-          >
-            {submitting ? "Updating..." : "Update Member"}
-          </button>
-        </div>
-      </form>
+          <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center">
+            <button
+              type="button"
+              onClick={() => router.push("/admin/members")}
+              className="px-6 py-2 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="flex items-center gap-2 px-8 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg disabled:opacity-50 shadow-lg shadow-blue-500/20 transition-all transform hover:-translate-y-0.5"
+            >
+              {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
+              {submitting ? "Updating..." : "Update Member"}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

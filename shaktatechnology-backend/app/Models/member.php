@@ -25,9 +25,7 @@ class Member extends Model
         'instagram',
         'github',
         'address',
-        'short_description',
-        'training',
         'education',
-        'reference'
+        'member_order'
     ];
 }

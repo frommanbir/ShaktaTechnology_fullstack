@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Fragment } from "react";
+import { useEffect, useState, Fragment, useCallback } from "react";
 import { getMembers, deleteMember } from "@/lib/api";
 import { Dialog, Transition } from "@headlessui/react";
 import {
@@ -11,7 +11,11 @@ import {
   Loader2,
   User,
   Pencil,
-  Trash,
+  FileText,
+  File as FileIcon,
+  Download,
+  X,
+  Trash2,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -27,6 +31,9 @@ import {
 } from "docx";
 import { saveAs } from "file-saver";
 import SearchBar from "@/components/SearchBar";
+import { toast } from "sonner";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 interface Member {
   id: number;
@@ -45,18 +52,14 @@ interface Member {
   instagram?: string;
   github?: string;
   address?: string;
-  short_description?: string;
-  training?: string;
   education?: string;
-  reference?: string;
+  member_order?: number;
 }
 
 export default function AdminMembersPage() {
   const [members, setMembers] = useState<Member[]>([]);
-  const [filteredMembers, setFilteredMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
-  const [viewImage, setViewImage] = useState<string | null>(null);
   const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -65,233 +68,245 @@ export default function AdminMembersPage() {
   const limit = 10;
 
   const storageUrl = process.env.NEXT_PUBLIC_STORAGE_URL;
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
-  async function fetchMembers() {
+  const fetchMembers = useCallback(async () => {
     setLoading(true);
     try {
       const res = await getMembers(page, limit);
       setMembers(res.data || []);
-      setFilteredMembers(res.data || []);
       setTotalPages(res.total_pages || 1);
     } catch (err) {
       console.error(err);
+      toast.error("Failed to fetch members");
     } finally {
       setLoading(false);
     }
-  }
+  }, [page, limit]);
 
   useEffect(() => {
     fetchMembers();
-  }, [page]);
+  }, [fetchMembers]);
 
-  function openDeleteConfirmation(member: Member) {
-    setMemberToDelete(member);
-  }
+  async function exportMemberToPDF(member: Member) {
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
 
-  function closeDeleteConfirmation() {
-    setMemberToDelete(null);
+      // Header
+      doc.setFontSize(22);
+      doc.setTextColor(46, 91, 255);
+      doc.text(member.name.toUpperCase(), pageWidth / 2, 20, { align: "center" });
+
+      doc.setFontSize(14);
+      doc.setTextColor(100);
+      doc.text(member.position || "Professional", pageWidth / 2, 28, { align: "center" });
+
+      if (member.department) {
+        doc.setFontSize(12);
+        doc.text(member.department, pageWidth / 2, 34, { align: "center" });
+      }
+
+      // Contact Line
+      doc.setDrawColor(200);
+      doc.line(20, 40, pageWidth - 20, 40);
+
+      let yPos = 50;
+
+      // Contact Information
+      doc.setFontSize(12);
+      doc.setTextColor(0);
+      doc.setFont("helvetica", "bold");
+      doc.text("CONTACT INFORMATION", 20, yPos);
+      doc.setFont("helvetica", "normal");
+      yPos += 8;
+
+      const contactData = [
+        ["Email", member.email],
+        ["Phone", member.phone || "-"],
+        ["Address", member.address || "-"],
+        ["Social", [
+          member.linkedin ? "LinkedIn" : "",
+          member.github ? "GitHub" : "",
+          member.facebook ? "Facebook" : ""
+        ].filter(Boolean).join(", ") || "-"]
+      ];
+
+      autoTable(doc, {
+        startY: yPos,
+        body: contactData,
+        theme: "plain",
+        styles: { fontSize: 10, cellPadding: 1 },
+        columnStyles: { 0: { fontStyle: "bold", width: 40 } },
+        margin: { left: 20 }
+      });
+
+      yPos = (doc as any).lastAutoTable.finalY + 10;
+
+      // Sections helper
+      const addSection = (title: string, content: string) => {
+        if (!content) return;
+        if (yPos > 250) {
+          doc.addPage();
+          yPos = 20;
+        }
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(46, 91, 255);
+        doc.text(title, 20, yPos);
+        doc.line(20, yPos + 2, 60, yPos + 2);
+        yPos += 8;
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(0);
+        doc.setFontSize(10);
+        const splitText = doc.splitTextToSize(content, pageWidth - 40);
+        doc.text(splitText, 20, yPos);
+        yPos += splitText.length * 5 + 10;
+      };
+
+      addSection("PROFESSIONAL SUMMARY", member.about || "");
+      addSection("EXPERIENCE", member.experience || "");
+      addSection("EDUCATION", member.education || "");
+      addSection("PROJECTS INVOLVED", member.projects_involved || "");
+
+      if (member.role) {
+        addSection("ADDITIONAL INFO", `Role: ${member.role}`);
+      }
+
+      doc.save(`${member.name.replace(/\s+/g, "_")}_CV.pdf`);
+      toast.success("PDF exported successfully");
+    } catch (err) {
+      toast.error("Failed to export PDF");
+    }
   }
 
   async function exportMemberToWord(member: Member) {
-    const createSectionHeading = (text: string) => {
-      return new Paragraph({
-        children: [
-          new TextRun({
-            text: text,
-            bold: true,
-            size: 28,
-            color: "2E5BFF",
-          }),
-        ],
-        heading: HeadingLevel.HEADING_2,
-        spacing: { after: 200, before: 400 },
-        border: { bottom: { color: "2E5BFF", size: 4, style: "single" } },
-      });
-    };
-
-    const createContactInfo = (label: string, value: string) => {
-      if (!value || value === "-") return null;
-      return new Paragraph({
-        children: [
-          new TextRun({ text: `${label}: `, bold: true, size: 22 }),
-          new TextRun({ text: value, size: 22 }),
-        ],
-        spacing: { after: 120 },
-      });
-    };
-
-    const doc = new Document({
-      sections: [
-        {
-          properties: {
-            page: {
-              margin: { top: 1000, right: 1000, bottom: 1000, left: 1000 },
-            },
-          },
+    toast.loading("Generating Word document...");
+    try {
+      const createSectionHeading = (text: string) => {
+        return new Paragraph({
           children: [
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: member.name.toUpperCase(),
-                  bold: true,
-                  size: 36,
-                  color: "1A1A1A",
-                }),
-              ],
-              alignment: AlignmentType.CENTER,
-              spacing: { after: 300 },
+            new TextRun({
+              text: text,
+              bold: true,
+              size: 28,
+              color: "2E5BFF",
             }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: member.position || "Professional",
-                  bold: true,
-                  size: 26,
-                  color: "2E5BFF",
-                }),
-              ],
-              alignment: AlignmentType.CENTER,
-              spacing: { after: 200 },
-            }),
-            member.department
-              ? new Paragraph({
-                  children: [
-                    new TextRun({
-                      text: member.department,
-                      italics: true,
-                      size: 22,
-                      color: "666666",
+          ],
+          heading: HeadingLevel.HEADING_2,
+          spacing: { after: 200, before: 400 },
+          border: { bottom: { color: "2E5BFF", size: 4, style: "single" } },
+        });
+      };
+
+      const doc = new Document({
+        sections: [
+          {
+            properties: {
+              page: {
+                margin: { top: 1000, right: 1000, bottom: 1000, left: 1000 },
+              },
+            },
+            children: [
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: member.name.toUpperCase(),
+                    bold: true,
+                    size: 36,
+                    color: "1A1A1A",
+                  }),
+                ],
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 300 },
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: member.position || "Professional",
+                    bold: true,
+                    size: 26,
+                    color: "2E5BFF",
+                  }),
+                ],
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 200 },
+              }),
+              
+              createSectionHeading("CONTACT INFORMATION"),
+              new Paragraph({
+                children: [
+                  new TextRun({ text: "Email: ", bold: true, size: 22 }),
+                  new TextRun({ text: member.email, size: 22 }),
+                ],
+                spacing: { after: 120 },
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({ text: "Phone: ", bold: true, size: 22 }),
+                  new TextRun({ text: member.phone || "-", size: 22 }),
+                ],
+                spacing: { after: 120 },
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({ text: "Address: ", bold: true, size: 22 }),
+                  new TextRun({ text: member.address || "-", size: 22 }),
+                ],
+                spacing: { after: 120 },
+              }),
+
+              ...(member.about
+                ? [
+                    createSectionHeading("PROFESSIONAL SUMMARY"),
+                    new Paragraph({
+                      children: [new TextRun({ text: member.about, size: 22 })],
+                      spacing: { after: 400 },
                     }),
-                  ],
-                  alignment: AlignmentType.CENTER,
-                  spacing: { after: 400 },
-                })
-              : new Paragraph({ text: "" }),
+                  ]
+                : []),
+              ...(member.experience
+                ? [
+                    createSectionHeading("EXPERIENCE"),
+                    new Paragraph({
+                      children: [new TextRun({ text: member.experience, size: 22 })],
+                      spacing: { after: 400 },
+                    }),
+                  ]
+                : []),
+              ...(member.education
+                ? [
+                    createSectionHeading("EDUCATION"),
+                    new Paragraph({
+                      children: [new TextRun({ text: member.education, size: 22 })],
+                      spacing: { after: 400 },
+                    }),
+                  ]
+                : []),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "Generated on " + new Date().toLocaleDateString(),
+                    size: 18,
+                    color: "999999",
+                    italics: true,
+                  }),
+                ],
+                alignment: AlignmentType.CENTER,
+                spacing: { before: 600 },
+              }),
+            ].filter(Boolean) as Paragraph[],
+          },
+        ],
+      });
 
-            createSectionHeading("CONTACT INFORMATION"),
-            new Paragraph({
-              children: [
-                new TextRun({ text: "Email: ", bold: true, size: 22 }),
-                new TextRun({ text: member.email, size: 22 }),
-              ],
-              spacing: { after: 120 },
-            }),
-            createContactInfo("Phone", member.phone || ""),
-            createContactInfo("Address", member.address || ""),
-
-            ...(member.linkedin ||
-            member.github ||
-            member.facebook ||
-            member.instagram
-              ? [
-                  new Paragraph({
-                    children: [
-                      new TextRun({ text: "Social Media: ", bold: true, size: 22 }),
-                      new TextRun({
-                        text: [
-                          member.linkedin ? "LinkedIn" : "",
-                          member.github ? "GitHub" : "",
-                          member.facebook ? "Facebook" : "",
-                          member.instagram ? "Instagram" : "",
-                        ]
-                          .filter(Boolean)
-                          .join(", "),
-                        size: 22,
-                      }),
-                    ],
-                    spacing: { after: 400 },
-                  }),
-                ]
-              : []),
-
-            ...(member.about
-              ? [
-                  createSectionHeading("PROFESSIONAL SUMMARY"),
-                  new Paragraph({
-                    children: [new TextRun({ text: member.about, size: 22 })],
-                    spacing: { after: 400 },
-                  }),
-                ]
-              : []),
-            ...(member.experience
-              ? [
-                  createSectionHeading("EXPERIENCE"),
-                  new Paragraph({
-                    children: [new TextRun({ text: member.experience, size: 22 })],
-                    spacing: { after: 400 },
-                  }),
-                ]
-              : []),
-            ...(member.projects_involved
-              ? [
-                  createSectionHeading("PROJECTS INVOLVED"),
-                  new Paragraph({
-                    children: [
-                      new TextRun({ text: member.projects_involved, size: 22 }),
-                    ],
-                    spacing: { after: 400 },
-                  }),
-                ]
-              : []),
-            ...(member.education
-              ? [
-                  createSectionHeading("EDUCATION"),
-                  new Paragraph({
-                    children: [new TextRun({ text: member.education, size: 22 })],
-                    spacing: { after: 400 },
-                  }),
-                ]
-              : []),
-            ...(member.training
-              ? [
-                  createSectionHeading("TRAINING & CERTIFICATIONS"),
-                  new Paragraph({
-                    children: [new TextRun({ text: member.training, size: 22 })],
-                    spacing: { after: 400 },
-                  }),
-                ]
-              : []),
-            ...(member.reference
-              ? [
-                  createSectionHeading("REFERENCES"),
-                  new Paragraph({
-                    children: [new TextRun({ text: member.reference, size: 22 })],
-                    spacing: { after: 400 },
-                  }),
-                ]
-              : []),
-            ...(member.role
-              ? [
-                  createSectionHeading("ADDITIONAL INFORMATION"),
-                  new Paragraph({
-                    children: [
-                      new TextRun({ text: "Role: ", bold: true, size: 22 }),
-                      new TextRun({ text: member.role, size: 22 }),
-                    ],
-                    spacing: { after: 400 },
-                  }),
-                ]
-              : []),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "Generated on " + new Date().toLocaleDateString(),
-                  size: 18,
-                  color: "999999",
-                  italics: true,
-                }),
-              ],
-              alignment: AlignmentType.CENTER,
-              spacing: { before: 600 },
-            }),
-          ].filter(Boolean) as Paragraph[],
-        },
-      ],
-    });
-
-    const blob = await Packer.toBlob(doc);
-    saveAs(blob, `${member.name.replace(/\s+/g, "_")}_CV.docx`);
+      const blob = await Packer.toBlob(doc);
+      saveAs(blob, `${member.name.replace(/\s+/g, "_")}_CV.docx`);
+      toast.dismiss();
+      toast.success("Word document exported");
+    } catch (err) {
+      toast.dismiss();
+      toast.error("Failed to export Word document");
+    }
   }
 
   async function handleDelete() {
@@ -299,47 +314,32 @@ export default function AdminMembersPage() {
     setIsDeleting(true);
     try {
       await deleteMember(memberToDelete.id);
+      toast.success("Member deleted successfully");
       fetchMembers();
-      closeDeleteConfirmation();
+      setMemberToDelete(null);
     } catch (err) {
       console.error(err);
+      toast.error("Failed to delete member");
     } finally {
       setIsDeleting(false);
     }
   }
 
-  function openMemberProfile(member: Member) {
-    setSelectedMember(member);
-  }
-
-  function closeMemberProfile() {
-    setSelectedMember(null);
-  }
-
-  function handleImageClick(imageUrl: string) {
-    setViewImage(imageUrl);
-  }
-
-  function closeImageView() {
-    setViewImage(null);
-  }
-
-  const handleSearch = (query: string) => {
+  const handleSearch = useCallback((query: string) => {
     if (!query) {
-      setFilteredMembers(members);
+      fetchMembers();
       return;
     }
     const lower = query.toLowerCase();
-    setFilteredMembers(
-      members.filter(
+    setMembers((prev) => 
+      prev.filter(
         (m) =>
           m.name.toLowerCase().includes(lower) ||
           m.email.toLowerCase().includes(lower) ||
-          (m.department && m.department.toLowerCase().includes(lower)) ||
-          (m.position && m.position.toLowerCase().includes(lower))
+          (m.department && m.department.toLowerCase().includes(lower))
       )
     );
-  };
+  }, [fetchMembers]);
 
   return (
     <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors">
@@ -349,125 +349,95 @@ export default function AdminMembersPage() {
             Members
           </h1>
 
-          <div className="flex-1 min-w-[200px] max-w-md">
-            <SearchBar onSearch={handleSearch} placeholder="Search members..." />
+          <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
+            <div className="w-full sm:w-72">
+              <SearchBar onSearch={handleSearch} placeholder="Search members..." />
+            </div>
+            <Link
+              href="/admin/members/add"
+              className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors shadow-lg active:scale-95 text-center whitespace-nowrap"
+            >
+              Add New Member
+            </Link>
           </div>
-
-          <Link
-            href="/admin/members/add"
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-          >
-            Add New Member
-          </Link>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl overflow-hidden border border-gray-200 dark:border-gray-700">
           <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-700/50">
               <tr>
-                <th className="py-3 px-4 text-left font-medium text-gray-700 dark:text-gray-300">
-                  S.N
-                </th>
-                <th className="py-3 px-4 text-left font-medium text-gray-700 dark:text-gray-300">
-                  Image
-                </th>
-                <th className="py-3 px-4 text-left font-medium text-gray-700 dark:text-gray-300">
-                  Name
-                </th>
-                <th className="py-3 px-4 text-left font-medium text-gray-700 dark:text-gray-300">
-                  Email
-                </th>
-                <th className="py-3 px-4 text-left font-medium text-gray-700 dark:text-gray-300">
-                  Department
-                </th>
-                <th className="py-3 px-4 text-left font-medium text-gray-700 dark:text-gray-300">
-                  Position
-                </th>
-                <th className="py-3 px-4 text-left font-medium text-gray-700 dark:text-gray-300">
-                  Actions
-                </th>
+                <th className="py-3 px-4 text-left font-medium text-gray-700 dark:text-gray-300">S.N</th>
+                <th className="py-3 px-4 text-left font-medium text-gray-700 dark:text-gray-300">Info</th>
+                <th className="py-3 px-4 text-left font-medium text-gray-700 dark:text-gray-300">Role & Dept</th>
+                <th className="py-3 px-4 text-left font-medium text-gray-700 dark:text-gray-300">Order</th>
+                <th className="py-3 px-4 text-left font-medium text-gray-700 dark:text-gray-300">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {loading ? (
-                <TableSkeleton rows={limit} columns={6} showImage={true} />
+                <TableSkeleton rows={limit} columns={5} showImage={true} />
               ) : members.length === 0 ? (
                 <TableEmptyState 
-                  message={
-                    <>
-                      No members found.{" "}
-                      <Link href="/admin/members/add" className="text-blue-600 hover:underline">
-                        Add the first one
-                      </Link>
-                    </>
-                  } 
-                  colSpan={7} 
+                  message="No members found. Add some team members to get started." 
+                  colSpan={5} 
                 />
               ) : (
                 members.map((member, index) => (
-                  <tr
-                    key={member.id}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                  >
-                    <td className="py-2 px-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 font-medium">
-                      {(page - 1) * limit + index + 1}
-                    </td>
-                    <td className="py-2 px-4">
-                      {member.image ? (
-                        <Image
-                          src={member.image}
-                          alt={member.name}
-                          width={40}
-                          height={40}
-                          className="rounded-full cursor-pointer object-cover"
-                          loading="lazy"
-                          onClick={() =>
-                            handleImageClick(`${storageUrl}members/${member.image}`)
-                          }
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-gray-600 dark:text-gray-300 text-xs font-medium">
-                          {member.name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")
-                            .toUpperCase()}
+                  <tr key={member.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors group">
+                    <td className="py-3 px-4 text-sm text-gray-500 font-medium">{(page - 1) * limit + index + 1}</td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-3">
+                        {member.image ? (
+                          <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-200 dark:border-gray-600">
+                            <Image
+                              src={member.image}
+                              alt={member.name}
+                              width={40}
+                              height={40}
+                              className="object-cover h-full w-full"
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 font-bold">
+                            {member.name.charAt(0)}
+                          </div>
+                        )}
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{member.name}</p>
+                          <p className="text-xs text-gray-500">{member.email}</p>
                         </div>
-                      )}
+                      </div>
                     </td>
-                    <td className="py-2 px-4 text-gray-900 dark:text-gray-100">
-                      {member.name}
+                    <td className="py-3 px-4">
+                      <p className="text-sm text-gray-700 dark:text-gray-300">{member.position || "-"}</p>
+                      <p className="text-xs text-gray-500 font-medium">{member.department || "-"}</p>
                     </td>
-                    <td className="py-2 px-4 text-gray-600 dark:text-gray-400">
-                      {member.email}
+                    <td className="py-3 px-4">
+                      <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-xs font-bold text-gray-600 dark:text-gray-400">
+                        {member.member_order || 0}
+                      </span>
                     </td>
-                    <td className="py-2 px-4 text-gray-600 dark:text-gray-400">
-                      {member.department || "-"}
-                    </td>
-                    <td className="py-2 px-4 text-gray-600 dark:text-gray-400">
-                      {member.position || "-"}
-                    </td>
-                    <td className="py-2 px-4 flex gap-2">
+                    <td className="py-3 px-4 flex gap-2">
                       <button
-                        onClick={() => openMemberProfile(member)}
-                        className="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 text-sm flex items-center transition-colors"
-                        title="Profile"
+                        onClick={() => setSelectedMember(member)}
+                        className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 transition-colors"
+                        title="View Profile"
                       >
-                        <User size={16} />
+                        <User size={18} />
                       </button>
                       <Link
                         href={`/admin/members/${member.id}/edit`}
-                        className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-md hover:bg-blue-200 dark:hover:bg-blue-800 text-sm flex items-center transition-colors"
+                        className="p-2 text-gray-600 dark:text-gray-400 hover:text-green-600 transition-colors"
                         title="Edit"
                       >
-                        <Pencil size={16} />
+                        <Pencil size={18} />
                       </Link>
                       <button
-                        onClick={() => openDeleteConfirmation(member)}
-                        className="px-3 py-1 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded-md hover:bg-red-200 dark:hover:bg-red-800 text-sm flex items-center transition-colors"
+                        onClick={() => setMemberToDelete(member)}
+                        className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 transition-colors"
                         title="Delete"
                       >
-                        <Trash size={16} />
+                        <Trash2 size={18} />
                       </button>
                     </td>
                   </tr>
@@ -485,13 +455,9 @@ export default function AdminMembersPage() {
           itemsPerPage={limit}
         />
 
-        {/* Delete Confirmation Modal */}
-        <Transition show={!!memberToDelete} as={Fragment}>
-          <Dialog
-            as="div"
-            className="relative z-50"
-            onClose={closeDeleteConfirmation}
-          >
+        {/* Member Profile Modal */}
+        <Transition show={!!selectedMember} as={Fragment}>
+          <Dialog as="div" className="relative z-50" onClose={() => setSelectedMember(null)}>
             <Transition.Child
               as={Fragment}
               enter="ease-out duration-300"
@@ -501,7 +467,7 @@ export default function AdminMembersPage() {
               leaveFrom="opacity-100"
               leaveTo="opacity-0"
             >
-              <div className="fixed inset-0 bg-black bg-opacity-75" />
+              <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
             </Transition.Child>
 
             <div className="fixed inset-0 flex items-center justify-center p-4">
@@ -514,278 +480,156 @@ export default function AdminMembersPage() {
                 leaveFrom="opacity-100 scale-100"
                 leaveTo="opacity-0 scale-95"
               >
-                <Dialog.Panel className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6 shadow-xl">
-                  <Dialog.Title className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
-                    Confirm Deletion
-                  </Dialog.Title>
-                  <p className="text-gray-600 dark:text-gray-300 mb-6">
-                    Are you sure you want to delete{" "}
-                    <span className="font-semibold">
-                      {memberToDelete?.name}
-                    </span>
-                    ? This action cannot be undone.
-                  </p>
-                  <div className="flex justify-end space-x-3">
-                    <button
-                      onClick={closeDeleteConfirmation}
-                      disabled={isDeleting}
-                      className={`px-4 py-2 rounded-md transition-colors ${
-                        isDeleting
-                          ? "bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed"
-                          : "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600"
-                      }`}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleDelete}
-                      disabled={isDeleting}
-                      className={`px-4 py-2 rounded-md flex items-center transition-colors ${
-                        isDeleting
-                          ? "bg-red-400 text-white cursor-not-allowed"
-                          : "bg-red-600 text-white hover:bg-red-700"
-                      }`}
-                    >
-                      {isDeleting ? "Deleting..." : "Delete Member"}
-                    </button>
-                  </div>
+                <Dialog.Panel className="bg-white dark:bg-gray-800 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+                  {selectedMember && (
+                    <div className="relative">
+                      {/* Close Button */}
+                      <button
+                        onClick={() => setSelectedMember(null)}
+                        className="absolute right-4 top-4 p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors z-10"
+                      >
+                        <X size={24} />
+                      </button>
+
+                      {/* Cover/Header area */}
+                      <div className="h-32 bg-gradient-to-r from-blue-600 to-indigo-700" />
+                      
+                      <div className="px-8 pb-8">
+                        <div className="flex flex-col md:flex-row gap-6 -mt-12 items-end md:items-center">
+                          <div className="relative">
+                            {selectedMember.image ? (
+                              <Image
+                                src={selectedMember.image}
+                                alt={selectedMember.name}
+                                width={120}
+                                height={120}
+                                className="rounded-2xl object-cover h-32 w-32 border-4 border-white dark:border-gray-800 shadow-lg"
+                              />
+                            ) : (
+                              <div className="w-32 h-32 rounded-2xl bg-blue-100 dark:bg-gray-700 flex items-center justify-center text-blue-600 dark:text-blue-400 text-4xl font-bold border-4 border-white dark:border-gray-800 shadow-lg">
+                                {selectedMember.name.charAt(0)}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="text-3xl font-bold text-gray-900 dark:text-white">
+                              {selectedMember.name}
+                            </h3>
+                            <p className="text-blue-600 dark:text-blue-400 font-medium">{selectedMember.position || "Professional"}</p>
+                          </div>
+                          
+                          {/* Export Buttons */}
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => exportMemberToPDF(selectedMember)}
+                              className="flex items-center gap-2 px-3 py-2 bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 rounded-lg hover:bg-red-100 transition-colors text-sm font-semibold border border-red-100 dark:border-red-900/30"
+                            >
+                              <FileIcon size={16} />
+                              PDF CV
+                            </button>
+                            <button
+                              onClick={() => exportMemberToWord(selectedMember)}
+                              className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 rounded-lg hover:bg-blue-100 transition-colors text-sm font-semibold border border-blue-100 dark:border-blue-900/30"
+                            >
+                              <FileText size={16} />
+                              Word CV
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-10">
+                          <div className="space-y-6">
+                            <div>
+                              <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">Contact Details</h4>
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-3 text-gray-700 dark:text-gray-300">
+                                  <div className="w-8 h-8 rounded-lg bg-gray-50 dark:bg-gray-700 flex items-center justify-center text-gray-400">@</div>
+                                  <span className="text-sm">{selectedMember.email}</span>
+                                </div>
+                                {selectedMember.phone && (
+                                  <div className="flex items-center gap-3 text-gray-700 dark:text-gray-300">
+                                    <div className="w-8 h-8 rounded-lg bg-gray-50 dark:bg-gray-700 flex items-center justify-center text-gray-400">#</div>
+                                    <span className="text-sm">{selectedMember.phone}</span>
+                                  </div>
+                                )}
+                                {selectedMember.address && (
+                                  <div className="flex items-center gap-3 text-gray-700 dark:text-gray-300">
+                                    <div className="w-8 h-8 rounded-lg bg-gray-50 dark:bg-gray-700 flex items-center justify-center text-gray-400">L</div>
+                                    <span className="text-sm">{selectedMember.address}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            <div>
+                              <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">Professional</h4>
+                              <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                                <p><span className="font-semibold text-gray-800 dark:text-gray-200">Dept:</span> {selectedMember.department || "-"}</p>
+                                <p><span className="font-semibold text-gray-800 dark:text-gray-200">Role:</span> {selectedMember.role || "-"}</p>
+                                <p><span className="font-semibold text-gray-800 dark:text-gray-200">Education:</span> {selectedMember.education || "-"}</p>
+                                <p><span className="font-semibold text-gray-800 dark:text-gray-200">Exp:</span> {selectedMember.experience || "-"}</p>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="space-y-6">
+                            <div>
+                              <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">About Me</h4>
+                              <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed italic">
+                                "{selectedMember.about || "No professional summary provided."}"
+                              </p>
+                            </div>
+
+                            <div>
+                              <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">Presence</h4>
+                              <div className="flex gap-3">
+                                {selectedMember.linkedin && (
+                                  <a href={selectedMember.linkedin} target="_blank" className="p-2 bg-gray-50 dark:bg-gray-700 rounded-lg text-blue-600 hover:scale-110 transition-transform">
+                                    <Linkedin size={20} />
+                                  </a>
+                                )}
+                                {selectedMember.github && (
+                                  <a href={selectedMember.github} target="_blank" className="p-2 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-800 dark:text-white hover:scale-110 transition-transform">
+                                    <Github size={20} />
+                                  </a>
+                                )}
+                                {selectedMember.facebook && (
+                                  <a href={selectedMember.facebook} target="_blank" className="p-2 bg-gray-50 dark:bg-gray-700 rounded-lg text-blue-800 hover:scale-110 transition-transform">
+                                    <Facebook size={20} />
+                                  </a>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </Dialog.Panel>
               </Transition.Child>
             </div>
           </Dialog>
         </Transition>
 
-        {/* Member Profile Modal */}
-        <Transition show={!!selectedMember} as={Fragment}>
-          <Dialog
-            as="div"
-            className="relative z-50"
-            onClose={closeMemberProfile}
-          >
-            <Transition.Child
-              as={Fragment}
-              enter="ease-out duration-300"
-              enterFrom="opacity-0"
-              enterTo="opacity-100"
-              leave="ease-in duration-200"
-              leaveFrom="opacity-100"
-              leaveTo="opacity-0"
-            >
-              <div className="fixed inset-0 bg-black bg-opacity-75" />
-            </Transition.Child>
-
-            <div className="fixed inset-0 flex items-center justify-center p-4 overflow-y-auto">
-              <Transition.Child
-                as={Fragment}
-                enter="ease-out duration-300"
-                enterFrom="opacity-0 scale-95"
-                enterTo="opacity-100 scale-100"
-                leave="ease-in duration-200"
-                leaveFrom="opacity-100 scale-100"
-                leaveTo="opacity-0 scale-95"
-              >
-                <Dialog.Panel className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-xl">
-                  <div className="flex justify-between items-center mb-4">
-                    <Dialog.Title className="text-xl font-bold text-gray-900 dark:text-white">
-                      Member Profile
-                    </Dialog.Title>
-                    <button
-                      onClick={closeMemberProfile}
-                      className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-2xl"
-                    >
-                      ×
-                    </button>
-                  </div>
-
-                  {selectedMember && (
-                    <>
-                      <div className="flex flex-col md:flex-row gap-6 mb-6">
-                        <div className="flex-shrink-0">
-                          {selectedMember.image ? (
-                            <Image
-                              src={selectedMember.image}
-                              alt={selectedMember.name}
-                              width={128}
-                              height={128}
-                              className="rounded-full object-cover mx-auto cursor-pointer"
-                              onClick={() =>
-                                handleImageClick(
-                                  selectedMember.image!
-                                )
-                              }
-                            />
-                          ) : (
-                            <div className="w-32 h-32 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center mx-auto text-gray-500 dark:text-gray-400 text-2xl font-medium">
-                              {selectedMember.name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")
-                                .toUpperCase()}
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="flex-grow">
-                          <h3 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">
-                            {selectedMember.name}
-                          </h3>
-                          <p className="text-gray-600 dark:text-gray-400 mb-1">
-                            {selectedMember.position || "-"}
-                          </p>
-                          <p className="text-gray-600 dark:text-gray-400 mb-1">
-                            {selectedMember.department || "-"}
-                          </p>
-                          <p className="text-gray-600 dark:text-gray-400 mb-3">
-                            {selectedMember.role || "-"}
-                          </p>
-                          <p className="text-gray-600 dark:text-gray-400 mb-3">
-                            {selectedMember.short_description ||
-                              "No short description available."}
-                          </p>
-
-                          <div className="flex space-x-3 mt-2">
-                            {selectedMember.linkedin && (
-                              <a
-                                href={selectedMember.linkedin}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
-                              >
-                                <Linkedin size={20} />
-                              </a>
-                            )}
-                            {selectedMember.github && (
-                              <a
-                                href={selectedMember.github}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-gray-800 dark:text-gray-200 hover:text-gray-600 dark:hover:text-gray-400"
-                              >
-                                <Github size={20} />
-                              </a>
-                            )}
-                            {selectedMember.facebook && (
-                              <a
-                                href={selectedMember.facebook}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
-                              >
-                                <Facebook size={20} />
-                              </a>
-                            )}
-                            {selectedMember.instagram && (
-                              <a
-                                href={selectedMember.instagram}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-pink-600 dark:text-pink-400 hover:text-pink-800 dark:hover:text-pink-300"
-                              >
-                                <Instagram size={20} />
-                              </a>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-4">
-                          <div>
-                            <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                              Contact Information
-                            </h3>
-                            <div className="space-y-2 text-sm">
-                              <div className="flex">
-                                <span className="w-32 font-medium text-gray-700 dark:text-gray-300">
-                                  Email:
-                                </span>
-                                <span className="text-gray-600 dark:text-gray-400">
-                                  {selectedMember.email}
-                                </span>
-                              </div>
-                              <div className="flex">
-                                <span className="w-32 font-medium text-gray-700 dark:text-gray-300">
-                                  Phone:
-                                </span>
-                                <span className="text-gray-600 dark:text-gray-400">
-                                  {selectedMember.phone || "-"}
-                                </span>
-                              </div>
-                              <div className="flex">
-                                <span className="w-32 font-medium text-gray-700 dark:text-gray-300">
-                                  Address:
-                                </span>
-                                <span className="text-gray-600 dark:text-gray-400">
-                                  {selectedMember.address || "-"}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div>
-                            <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                              Professional Details
-                            </h3>
-                            <div className="space-y-2 text-sm">
-                              <div className="flex">
-                                <span className="w-32 font-medium text-gray-700 dark:text-gray-300">
-                                  Experience:
-                                </span>
-                                <span className="text-gray-600 dark:text-gray-400">
-                                  {selectedMember.experience || "-"}
-                                </span>
-                              </div>
-                              <div className="flex">
-                                <span className="w-32 font-medium text-gray-700 dark:text-gray-300">
-                                  Projects:
-                                </span>
-                                <span className="text-gray-600 dark:text-gray-400">
-                                  {selectedMember.projects_involved || "-"}
-                                </span>
-                              </div>
-                              <div className="flex">
-                                <span className="w-32 font-medium text-gray-700 dark:text-gray-300">
-                                  Training:
-                                </span>
-                                <span className="text-gray-600 dark:text-gray-400">
-                                  {selectedMember.training || "-"}
-                                </span>
-                              </div>
-                              <div className="flex">
-                                <span className="w-32 font-medium text-gray-700 dark:text-gray-300">
-                                  Education:
-                                </span>
-                                <span className="text-gray-600 dark:text-gray-400">
-                                  {selectedMember.education || "-"}
-                                </span>
-                              </div>
-                              <div className="flex">
-                                <span className="w-32 font-medium text-gray-700 dark:text-gray-300">
-                                  Reference:
-                                </span>
-                                <span className="text-gray-600 dark:text-gray-400">
-                                  {selectedMember.reference || "-"}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="space-y-4">
-                          <div>
-                            <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                              About
-                            </h3>
-                            <p className="text-gray-600 dark:text-gray-300">
-                              {selectedMember.about || "No information available."}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </Dialog.Panel>
-              </Transition.Child>
+        {/* Delete Modal */}
+        <Transition show={!!memberToDelete} as={Fragment}>
+          <Dialog as="div" className="relative z-50" onClose={() => setMemberToDelete(null)}>
+            <div className="fixed inset-0 bg-black/60" />
+            <div className="fixed inset-0 flex items-center justify-center p-4">
+              <Dialog.Panel className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-sm w-full shadow-2xl">
+                <Dialog.Title className="text-xl font-bold mb-4">Delete Member?</Dialog.Title>
+                <p className="text-gray-500 mb-6">Are you sure you want to remove <span className="font-bold text-gray-900 dark:text-white">{memberToDelete?.name}</span>? This cannot be undone.</p>
+                <div className="flex justify-end gap-3">
+                  <button onClick={() => setMemberToDelete(null)} className="px-4 py-2 text-sm font-bold text-gray-500 hover:text-gray-700">Cancel</button>
+                  <button 
+                    onClick={handleDelete} 
+                    disabled={isDeleting}
+                    className="px-6 py-2 bg-red-600 text-white rounded-xl text-sm font-bold hover:bg-red-700 transition-colors shadow-lg shadow-red-500/20 active:scale-95 disabled:opacity-50"
+                  >
+                    {isDeleting ? "Deleting..." : "Delete Permanently"}
+                  </button>
+                </div>
+              </Dialog.Panel>
             </div>
           </Dialog>
         </Transition>

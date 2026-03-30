@@ -18,7 +18,7 @@ export function Toast({ title, description, variant = "default", duration = 4000
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsClosing(true);
-      setTimeout(() => setVisible(false), 300); // Wait for fade-out animation
+      setTimeout(() => setVisible(false), 300); 
     }, duration);
     return () => clearTimeout(timer);
   }, [duration]);

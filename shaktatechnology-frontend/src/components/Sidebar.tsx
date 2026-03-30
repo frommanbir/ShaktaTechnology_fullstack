@@ -42,10 +42,10 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="w-64 bg-gray-900 border-r border-gray-200 text-gray-900 h-screen fixed left-0 top-0 flex flex-col z-40 shadow-[4px_0_24px_-15px_rgba(0,0,0,0.1)]">
-      <div className="h-16 border-b border-gray-200 flex items-center px-6">
-        <h1 className="text-xl font-bold font-poppins text-blue-600 tracking-tight">
-          Shakta <span className="text-white font-extrabold">Admin</span>
+    <aside className="w-64 bg-[#3d2f28] border-r border-[#4a3b32] text-gray-200 h-screen fixed left-0 top-0 flex flex-col z-40 shadow-[4px_0_24px_-15px_rgba(0,0,0,0.1)]">
+      <div className="h-16 border-b border-[#4a3b32] flex items-center px-6">
+        <h1 className="text-xl font-bold font-poppins text-[#d4a373] tracking-tight">
+          Shakta <span className="text-[#fdf8f6] font-extrabold">Admin</span>
         </h1>
       </div>
 
@@ -80,8 +80,8 @@ export function Sidebar() {
                           className={cn(
                             'flex-1 flex items-center px-4 py-2.5 rounded-xl transition-all duration-200 font-semibold text-sm',
                             isParentActive
-                              ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-                              : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'
+                              ? 'bg-[#8b5a2b] text-white shadow-lg shadow-[#8b5a2b]/20'
+                              : 'text-[#c2b2a9] hover:bg-[#4a3b32] hover:text-white'
                           )}
                         >
                           {item.name}
@@ -92,8 +92,8 @@ export function Sidebar() {
                           className={cn(
                             'p-2 rounded-lg transition-all duration-200',
                             isParentActive
-                              ? 'text-white hover:bg-blue-700'
-                              : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'
+                              ? 'text-white hover:bg-[#a06d3d]'
+                              : 'text-[#c2b2a9] hover:bg-[#4a3b32] hover:text-white'
                           )}
                           aria-label="Toggle submenu"
                         >
@@ -123,8 +123,8 @@ export function Sidebar() {
                                 className={cn(
                                   'flex items-center px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-200',
                                   isChildActive
-                                    ? 'bg-blue-600/20 text-blue-400'
-                                    : 'text-gray-500 hover:bg-gray-800 hover:text-gray-300'
+                                    ? 'bg-[#8b5a2b]/20 text-[#d4a373]'
+                                    : 'text-[#a89b94] hover:bg-[#4a3b32] hover:text-[#fdf8f6]'
                                 )}
                               >
                                 <span className="w-1 h-1 rounded-full bg-current mr-2 opacity-60" />
@@ -141,8 +141,8 @@ export function Sidebar() {
                       className={cn(
                         'group flex items-center px-4 py-2.5 rounded-xl transition-all duration-200 font-semibold text-sm',
                         isParentActive
-                          ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20 active:scale-[0.98]'
-                          : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'
+                          ? 'bg-[#8b5a2b] text-white shadow-lg shadow-[#8b5a2b]/20 active:scale-[0.98]'
+                          : 'text-[#c2b2a9] hover:bg-[#4a3b32] hover:text-white'
                       )}
                     >
                       {item.name}
@@ -155,7 +155,7 @@ export function Sidebar() {
         </div>
       </nav>
 
-      <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-center text-gray-400 py-6 border-t border-gray-200 bg-gray-50/30">
+      <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-center text-[#a89b94] py-6 border-t border-[#4a3b32] bg-[#32251e]">
         © {new Date().getFullYear()} Shakta Tech
       </div>
     </aside>

@@ -14,11 +14,11 @@ export const metadata: Metadata = {
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <ProtectedRoute>
-        <div className="flex h-screen bg-gray-50 text-gray-900 font-poppins selection:bg-blue-100">
+        <div className="admin-theme flex h-screen bg-background text-foreground font-poppins selection:bg-blue-100">
           <Sidebar />
           <div className="flex-1 ml-64 overflow-hidden flex flex-col">
             <Navbar />
-            <main className="flex-1 p-6 mt-16 overflow-y-auto bg-gray-50/50">
+            <main className="flex-1 p-6 mt-16 overflow-y-auto bg-background/50">
               {children}
             </main>
           </div>

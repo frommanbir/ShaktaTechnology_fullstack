@@ -19,9 +19,9 @@ export function Navbar() {
   };
 
   return (
-    <header className="fixed top-0 left-64 right-0 z-30 bg-white/80 backdrop-blur-md shadow-[0_4px_24px_-15px_rgba(0,0,0,0.1)] border-b border-gray-200 h-16 flex items-center px-6">
+    <header className="fixed top-0 left-64 right-0 z-30 bg-background/80 backdrop-blur-md shadow-[0_4px_24px_-15px_rgba(0,0,0,0.1)] border-b border-border h-16 flex items-center px-6">
       <div className="flex justify-between items-center w-full">
-        <h2 className="text-lg font-bold font-poppins text-gray-800 tracking-tight">
+        <h2 className="text-lg font-bold font-poppins text-foreground tracking-tight">
           Admin Dashboard
         </h2>
         <div className="flex items-center gap-4">

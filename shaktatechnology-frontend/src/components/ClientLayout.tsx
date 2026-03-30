@@ -4,6 +4,7 @@ import Navbar from "@/components/global/Navbar";
 import Footer from "@/components/global/Footer";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Toaster } from "sonner";
 
 export default function ClientLayout({
   children,
@@ -23,6 +24,7 @@ export default function ClientLayout({
 
   return (
     <>
+      <Toaster position="top-right" richColors />
       {showLayout && <Navbar />}
       {children}
       {showLayout && <Footer />}

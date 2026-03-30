@@ -19,9 +19,11 @@ class MemberController extends Controller
             $page = max(1, (int) $request->input("page", 1));
             $limit = min(100, max(1, (int) $request->input("limit", 10)));
 
-            $total = Member::count();
+            $query = Member::orderBy('member_order', 'asc');
 
-            $members = Member::skip(($page - 1) * $limit)->take($limit)->get();
+            $total = $query->count();
+
+            $members = $query->skip(($page - 1) * $limit)->take($limit)->get();
 
             if ($members->isEmpty()) {
                 return response()->json([
@@ -71,10 +73,8 @@ class MemberController extends Controller
                 'instagram' => 'nullable|url|max:255',
                 'github' => 'nullable|url|max:255',
                 'address' => 'nullable|string|max:255',
-                'short_description' => 'nullable|string|max:500',
-                'training' => 'nullable|string',
                 'education' => 'nullable|string',
-                'reference' => 'nullable|string|max:255',
+                'member_order' => 'nullable|integer|unique:members,member_order',
             ]);
 
             if ($validator->fails()) {
@@ -163,10 +163,8 @@ class MemberController extends Controller
                 'instagram' => 'nullable|url|max:255',
                 'github' => 'nullable|url|max:255',
                 'address' => 'nullable|string|max:255',
-                'short_description' => 'nullable|string|max:500',
-                'training' => 'nullable|string',
                 'education' => 'nullable|string',
-                'reference' => 'nullable|string|max:255',
+                'member_order' => 'nullable|integer|unique:members,member_order,' . $id,
             ]);
 
             if ($validator->fails()) {
@@ -187,6 +185,11 @@ class MemberController extends Controller
                 }
                 // upload new image
                 $data['image'] = CloudinaryHelper::uploadImage($request->file('image'), 'members');
+            } elseif ($request->input('remove_image') === 'true') {
+                if ($member->image) {
+                    CloudinaryHelper::deleteImage($member->image);
+                }
+                $data['image'] = null;
             }
 
             $member->update($data);
