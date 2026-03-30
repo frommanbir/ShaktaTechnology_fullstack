@@ -13,7 +13,6 @@ interface Faq {
   category?: string;
 }
 
-// No fallback FAQs anymore as per user request to hide empty sections
 
 
 export default function FAQ() {

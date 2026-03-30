@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 export default function MissionVision() {
   return (
     <section className="font-bold text-center bg-white dark:bg-gray-900">
-      <div className="max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-12">
+      <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-12">
         
         {/* Mission */}
         <motion.div
@@ -14,6 +14,7 @@ export default function MissionVision() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.4 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
+          className="flex flex-col items-center"
         >
           <div className="flex items-center gap-3">
             <Target className="w-8 h-8 text-purple-400" />
@@ -32,6 +33,7 @@ export default function MissionVision() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.4 }}
           transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
+          className="flex flex-col items-center"
         >
           <div className="flex items-center gap-3">
             <Eye className="w-8 h-8 text-purple-400" />

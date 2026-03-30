@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createNews } from "@/lib/api";
+import TextEditor from "@/components/global/TextEditor";
+import { ArrowLeft, Loader2, Camera, X } from "lucide-react";
 
 export default function AddNewsPage() {
   const router = useRouter();
@@ -19,6 +21,7 @@ export default function AddNewsPage() {
     featured: false,
     image: null as File | null,
   });
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -35,7 +38,15 @@ export default function AddNewsPage() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
-    setFormData((prev) => ({ ...prev, image: file }));
+    if (file) {
+      setFormData((prev) => ({ ...prev, image: file }));
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const removeImage = () => {
+    setFormData((prev) => ({ ...prev, image: null }));
+    setImagePreview(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -74,25 +85,24 @@ export default function AddNewsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 transition-colors duration-300">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
+    <div className="p-6 transition-colors duration-300">
+      <div className="max-w-7xl mx-auto">
         <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-                Add New Article
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-2">
-                Create a new news article
-              </p>
-            </div>
-            <Link
-              href="/admin/news"
-              className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition"
-            >
-              ← Back to News
-            </Link>
+          <Link
+            href="/admin/news"
+            className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors mb-4"
+          >
+            <ArrowLeft className="w-4 h-4 mr-1" />
+            Back to Newsroom
+          </Link>
+          <div className="flex items-center gap-3">
+             <div className="p-3 bg-purple-100 dark:bg-purple-900/40 rounded-2xl text-purple-600 dark:text-purple-400">
+                <Camera size={28} />
+             </div>
+             <div>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Publish Article</h1>
+                <p className="text-gray-600 dark:text-gray-400 mt-1">Compose and publish a new article to the newsroom.</p>
+             </div>
           </div>
         </div>
 
@@ -134,12 +144,13 @@ export default function AddNewsPage() {
                   onChange={handleChange}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
                 >
-                  <option value="General">Web Development</option>
-                  <option value="Technology">Design</option>
-                  <option value="Business">Backend</option>
-                  <option value="Events">Frontend</option>
-                  <option value="Updates">AI & ML</option>
-                  <option value="Announcements">Database</option>
+                  <option value="Web Development">Web Development</option>
+                  <option value="Design">Design</option>
+                  <option value="Backend">Backend</option>
+                  <option value="Frontend">Frontend</option>
+                  <option value="AI & ML">AI & ML</option>
+                  <option value="Database">Database</option>
+                  <option value="Announcements">Announcements</option>
                 </select>
               </div>
 
@@ -201,36 +212,54 @@ export default function AddNewsPage() {
                 </label>
               </div>
 
-              {/* Image Upload */}
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
                   Featured Image
                 </label>
-                <input
-                  type="file"
-                  name="image"
-                  onChange={handleFileChange}
-                  accept="image/*"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
-                />
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                  Upload a featured image for this article
-                </p>
+                
+                {imagePreview ? (
+                  <div className="relative inline-block group">
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="w-full max-h-64 object-cover rounded-2xl border-4 border-white dark:border-gray-800 shadow-xl"
+                    />
+                    <button
+                      type="button"
+                      onClick={removeImage}
+                      className="absolute -top-3 -right-3 p-2 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 transition-all transform active:scale-90"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <input
+                      type="file"
+                      name="image"
+                      id="image-upload"
+                      onChange={handleFileChange}
+                      accept="image/*"
+                      className="sr-only"
+                    />
+                    <label
+                      htmlFor="image-upload"
+                      className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-2xl bg-gray-50 dark:bg-gray-900/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-all group"
+                    >
+                      <Camera className="w-10 h-10 text-gray-400 group-hover:text-purple-500 transition-colors mb-2" />
+                      <span className="text-sm font-medium text-gray-500 group-hover:text-purple-600 transition-colors">Click to upload cover image</span>
+                    </label>
+                  </div>
+                )}
               </div>
 
-              {/* Description */}
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Description *
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
+                  Article Content *
                 </label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  required
-                  rows={6}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
-                  placeholder="Enter news description"
+                <TextEditor
+                  content={formData.description}
+                  onChange={(content) => setFormData(prev => ({ ...prev, description: content }))}
                 />
               </div>
             </div>

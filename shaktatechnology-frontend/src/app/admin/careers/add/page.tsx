@@ -73,8 +73,8 @@ export default function AddCareerPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 transition-colors duration-300">
-      <div className="max-w-4xl mx-auto">
+    <div className="p-6 transition-colors duration-300">
+      <div className="max-w-7xl mx-auto">
         {/* Navigation */}
         <Link 
           href="/admin/careers" 

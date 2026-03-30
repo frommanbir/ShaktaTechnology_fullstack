@@ -3,7 +3,7 @@
 import { useState, useEffect, Fragment } from "react";
 import { getProjects, deleteProject } from "@/lib/api";
 import { Dialog, Transition } from "@headlessui/react";
-import { Loader2, Trash2, Edit, ChevronDown, ChevronUp } from "lucide-react";
+import { Loader2, Trash2, Edit, ChevronDown, ChevronUp, Eye } from "lucide-react";
 import { TableSkeleton, TableEmptyState } from "@/components/ui/table-skeleton";
 import { Pagination } from "@/components/ui/pagination";
 import Link from "next/link";
@@ -110,8 +110,14 @@ export default function AdminProjectsPage() {
     "Education Tech",
   ];
 
+  const stripHtml = (html: string) => {
+    const tmp = document.createElement("DIV");
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || "";
+  };
+
   return (
-    <div className="p-6 max-w-7xl mx-auto bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100 transition-colors duration-300">
+    <div className="p-6 max-w-7xl mx-auto transition-colors duration-300">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-4 sm:space-y-0">
         <div className="flex items-center space-x-4">
           <h1 className="text-2xl font-bold">Projects</h1>
@@ -171,92 +177,73 @@ export default function AdminProjectsPage() {
             ) : (
               paginatedProjects.map((project, index) => (
                 <Fragment key={project.id}>
-                  <tr className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
+                  <tr className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all border-b border-gray-100 dark:border-gray-700/50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400 font-mono">
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {project.image ? (
-                        <Image
-                          src={`${project.image}`}
-                          alt={project.title}
-                          width={50}
-                          height={50}
-                          className="object-contain rounded"
-                          loading="lazy"
-                          onError={(e) => {
-                            e.currentTarget.src = "/no-image.png";
-                            e.currentTarget.srcset = "";
-                          }}
-                        />
+                        <div className="relative w-12 h-12 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                          <Image
+                            src={`${project.image}`}
+                            alt={project.title}
+                            fill
+                            className="object-cover"
+                            loading="lazy"
+                            onError={(e) => {
+                              e.currentTarget.src = "/no-image.png";
+                            }}
+                          />
+                        </div>
                       ) : (
-                        <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 rounded">
-                          No Image
+                        <div className="w-12 h-12 bg-gray-100 dark:bg-gray-900 rounded-lg flex items-center justify-center text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-tighter border border-gray-100 dark:border-gray-800">
+                          No Img
                         </div>
                       )}
                     </td>
                     <td className="px-6 py-4">
-                      <div className="line-clamp-2 max-w-[180px]">{project.title}</div>
+                      <div className="font-semibold text-gray-900 dark:text-gray-100 line-clamp-1 max-w-[200px]">{project.title}</div>
+                      <div className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-widest font-bold mt-1">{project.category}</div>
                     </td>
-                    <td className="px-6 py-4">{project.category}</td>
                     <td className="px-6 py-4">
-                      <div className="line-clamp-2 max-w-[280px]">{project.description}</div>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
+                        {project.category}
+                      </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium sticky right-0 bg-white dark:bg-gray-800 group-hover:bg-gray-50 dark:group-hover:bg-gray-700">
-                      <button
-                        onClick={() => toggleRow(project.id)}
-                        className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 mr-2"
-                      >
-                        {expandedRow === project.id ? (
-                          <ChevronUp className="h-5 w-5 inline" />
-                        ) : (
-                          <ChevronDown className="h-5 w-5 inline" />
-                        )}
-                      </button>
-                      <Link
-                        href={`/admin/project/${project.id}/edit`}
-                        className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 mr-2"
-                      >
-                        <Edit className="h-5 w-5 inline" />
-                      </Link>
-                      <button
-                        onClick={() => {
-                          setProjectToDelete(project);
-                          setShowDeleteModal(true);
-                        }}
-                        className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
-                      >
-                        <Trash2 className="h-5 w-5 inline" />
-                      </button>
+                    <td className="px-6 py-4">
+                      <div className="line-clamp-2 max-w-[280px] text-sm text-gray-600 dark:text-gray-400 italic">
+                        {stripHtml(project.description)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium sticky right-0 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm">
+                      <div className="flex items-center justify-end gap-2">
+                        <Link
+                          href={`/admin/project/${project.id}/view`}
+                          className="p-2 rounded-lg transition-all text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-indigo-600 dark:hover:text-indigo-400"
+                          title="View Details"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Link>
+                        <Link
+                          href={`/admin/project/${project.id}/edit`}
+                          className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                          title="Edit Project"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Link>
+                        <button
+                          onClick={() => {
+                            setProjectToDelete(project);
+                            setShowDeleteModal(true);
+                          }}
+                          className="p-2 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                          title="Delete Project"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
-                  {expandedRow === project.id && (
-                    <tr className="bg-gray-50 dark:bg-gray-900/50">
-                      <td colSpan={6} className="px-6 py-4 border-t border-gray-100 dark:border-gray-700">
-                        <div className="text-sm text-gray-800 dark:text-gray-200 space-y-2">
-                          <p><strong>Title:</strong> {project.title}</p>
-                          <p><strong>Category:</strong> {project.category}</p>
-                          <p><strong>Client:</strong> {project.client || 'N/A'}</p>
-                          <p><strong>Duration:</strong> {project.duration || 'N/A'}</p>
-                          <p><strong>Description:</strong> {project.description}</p>
-                          <p><strong>Technologies:</strong> {project.technologies?.join(', ') || 'None'}</p>
-                          {project.key_results && project.key_results.length > 0 && (
-                            <div>
-                              <strong>Key Results:</strong>
-                              <ul className="list-disc list-inside ml-4 mt-1 space-y-1 text-gray-600 dark:text-gray-400">
-                                {project.key_results.map((result, idx) => (
-                                  <li key={idx}>{result}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                            <strong>Created:</strong> {new Date(project.created_at).toLocaleDateString()}
-                          </p>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
                 </Fragment>
               ))
             )}

@@ -1,19 +1,55 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { getGallery, updateGallery } from "@/lib/api";
-import { ArrowLeft, Save, Upload, Loader2, Image as ImageIcon } from "lucide-react";
+import {
+  ArrowLeft,
+  Save,
+  Loader2,
+  ImagePlus,
+  RefreshCw,
+  X,
+} from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface ServerImage {
+  url: string;      // full URL to display
+  filename: string; // raw filename stored in DB
+}
+
+type ImageSlot =
+  | { kind: "existing"; data: ServerImage; markedForRemoval: boolean }
+  | { kind: "new"; file: File; preview: string };
 
 interface Gallery {
   id: number;
   title: string;
   description?: string;
+  // Support both single-image and multi-image API shapes
   image?: string;
   image_url?: string;
+  images?: string[];
 }
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const STORAGE_URL =
+  typeof window !== "undefined"
+    ? process.env.NEXT_PUBLIC_STORAGE_URL || process.env.NEXT_PUBLIC_API_URL || ""
+    : "";
+
+function resolveUrl(img: string): string {
+  return img.startsWith("http") ? img : `${STORAGE_URL}/storage/${img}`;
+}
+
+const VALID_TYPES = ["image/jpeg", "image/png", "image/jpg", "image/gif", "image/webp"];
+const MAX_SIZE = 5 * 1024 * 1024;
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export default function EditGalleryPage() {
   const router = useRouter();
@@ -23,15 +59,17 @@ export default function EditGalleryPage() {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [gallery, setGallery] = useState<Gallery | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    image: null as File | null,
-  });
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
-  const storageUrl = process.env.NEXT_PUBLIC_STORAGE_URL || process.env.NEXT_PUBLIC_API_URL || "";
+  const [slots, setSlots] = useState<ImageSlot[]>([]);
+  const [imageError, setImageError] = useState<string>("");
+
+  const [formData, setFormData] = useState({ title: "", description: "" });
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  // Per-slot hidden file inputs for individual replace
+  const replaceInputRefs = useRef<Map<number, HTMLInputElement>>(new Map());
+
+  // ── Fetch ──────────────────────────────────────────────────────────────────
 
   useEffect(() => {
     fetchGallery();
@@ -41,23 +79,36 @@ export default function EditGalleryPage() {
     try {
       setFetching(true);
       const response = await getGallery(id);
-      const data = response?.data || response;
+      const data: Gallery = response?.data || response;
       if (!data) throw new Error("Gallery not found");
 
       setGallery(data);
-      setFormData({
-        title: data.title || "",
-        description: data.description || "",
-        image: null,
-      });
+      setFormData({ title: data.title || "", description: data.description || "" });
 
-      if (data.image_url || data.image) {
-        setImagePreview(
-          data.image?.startsWith("http")
-            ? data.image
-            : `${storageUrl}/storage/${data.image}`
-        );
+      // Normalise to ImageSlot[]
+      let initialSlots: ImageSlot[] = [];
+
+      if (data.images && data.images.length > 0) {
+        initialSlots = data.images.map((img) => ({
+          kind: "existing" as const,
+          data: {
+            filename: img,
+            url: img.startsWith("http") ? img : resolveUrl(img),
+          },
+          markedForRemoval: false,
+        }));
+      } else if (data.image || data.image_url) {
+        const raw = data.image || "";
+        initialSlots = [
+          {
+            kind: "existing" as const,
+            data: { url: resolveUrl(raw), filename: raw },
+            markedForRemoval: false,
+          },
+        ];
       }
+
+      setSlots(initialSlots);
     } catch (error) {
       console.error("Failed to fetch gallery:", error);
       alert("Failed to load gallery item");
@@ -67,52 +118,168 @@ export default function EditGalleryPage() {
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  // ── Field handlers ─────────────────────────────────────────────────────────
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    if (errors[name]) setErrors(prev => ({ ...prev, [name]: "" }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (fieldErrors[name]) setFieldErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  // ── Image handlers ─────────────────────────────────────────────────────────
 
-    const validTypes = ["image/jpeg", "image/png", "image/jpg", "image/gif", "image/webp"];
-    if (!validTypes.includes(file.type)) {
-      setErrors(prev => ({ ...prev, image: "Please select a valid image file" }));
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      setErrors(prev => ({ ...prev, image: "Image must be less than 5MB" }));
-      return;
-    }
-
-    setFormData(prev => ({ ...prev, image: file }));
-    setErrors(prev => ({ ...prev, image: "" }));
-
-    const reader = new FileReader();
-    reader.onload = e => setImagePreview(e.target?.result as string);
-    reader.readAsDataURL(file);
+  const validateFiles = (
+    files: FileList | File[]
+  ): { valid: File[]; error: string } => {
+    const arr = Array.from(files);
+    const invalid = arr.filter((f) => !VALID_TYPES.includes(f.type));
+    const tooBig = arr.filter((f) => f.size > MAX_SIZE);
+    if (invalid.length)
+      return {
+        valid: [],
+        error: "Some files have unsupported formats. Use PNG, JPG, GIF, or WebP.",
+      };
+    if (tooBig.length)
+      return { valid: [], error: "Each image must be less than 5 MB." };
+    return { valid: arr, error: "" };
   };
+
+  // Add multiple new images via the bulk upload zone
+  const handleAddImages = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const { valid, error } = validateFiles(files);
+    if (error) {
+      setImageError(error);
+      e.target.value = "";
+      return;
+    }
+    setImageError("");
+
+    const newSlots: ImageSlot[] = valid.map((file) => ({
+      kind: "new" as const,
+      file,
+      preview: URL.createObjectURL(file),
+    }));
+
+    setSlots((prev) => [...prev, ...newSlots]);
+    e.target.value = "";
+  };
+
+  // Drag-and-drop on upload zone
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const files = e.dataTransfer.files;
+    if (!files || files.length === 0) return;
+    const { valid, error } = validateFiles(files);
+    if (error) {
+      setImageError(error);
+      return;
+    }
+    setImageError("");
+    const newSlots: ImageSlot[] = valid.map((file) => ({
+      kind: "new" as const,
+      file,
+      preview: URL.createObjectURL(file),
+    }));
+    setSlots((prev) => [...prev, ...newSlots]);
+  };
+
+  // Remove a slot: mark existing for removal (toggle), delete new slots outright
+  const handleRemoveSlot = (index: number) => {
+    setSlots((prev) => {
+      const slot = prev[index];
+      if (slot.kind === "new") {
+        URL.revokeObjectURL(slot.preview);
+        return prev.filter((_, i) => i !== index);
+      }
+      // Toggle removal flag for existing images
+      return prev.map((s, i) =>
+        i === index && s.kind === "existing"
+          ? { ...s, markedForRemoval: !s.markedForRemoval }
+          : s
+      );
+    });
+  };
+
+  // Replace a specific slot with a new file
+  const handleReplaceSlot = (index: number, file: File) => {
+    const { valid, error } = validateFiles([file]);
+    if (error) {
+      setImageError(error);
+      return;
+    }
+    setImageError("");
+
+    setSlots((prev) => {
+      const slot = prev[index];
+      const newSlot: ImageSlot = {
+        kind: "new",
+        file,
+        preview: URL.createObjectURL(file),
+      };
+
+      if (slot.kind === "new") {
+        // Swap new slot in place
+        URL.revokeObjectURL(slot.preview);
+        const updated = [...prev];
+        updated[index] = newSlot;
+        return updated;
+      }
+
+      // For existing: mark for removal, insert replacement right after
+      const updated = prev.map((s, i) =>
+        i === index && s.kind === "existing"
+          ? { ...s, markedForRemoval: true }
+          : s
+      );
+      updated.splice(index + 1, 0, newSlot);
+      return updated;
+    });
+  };
+
+  // ── Submit ─────────────────────────────────────────────────────────────────
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    const newErrors: { [key: string]: string } = {};
+    const newErrors: Record<string, string> = {};
     if (!formData.title.trim()) newErrors.title = "Title is required";
-
     if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
+      setFieldErrors(newErrors);
       setLoading(false);
       return;
     }
 
     try {
       const submitData = new FormData();
+      // Laravel method spoofing — required for multipart PUT requests
+      submitData.append("_method", "PUT");
       submitData.append("title", formData.title);
       if (formData.description) submitData.append("description", formData.description);
-      if (formData.image) submitData.append("image", formData.image);
+
+      // Filenames of existing images the user wants to keep
+      const keepFiles = slots
+        .filter(
+          (s): s is Extract<ImageSlot, { kind: "existing" }> =>
+            s.kind === "existing" && !s.markedForRemoval
+        )
+        .map((s) => s.data.filename);
+
+      keepFiles.forEach((filename) =>
+        submitData.append("existing_images[]", filename)
+      );
+
+      // New image files to upload
+      slots
+        .filter(
+          (s): s is Extract<ImageSlot, { kind: "new" }> => s.kind === "new"
+        )
+        .forEach((s) => submitData.append("images[]", s.file));
 
       await updateGallery(id, submitData);
       router.push("/admin/gallery");
@@ -120,7 +287,7 @@ export default function EditGalleryPage() {
     } catch (error: any) {
       console.error("Failed to update gallery:", error);
       if (error.response?.data?.errors) {
-        setErrors(error.response.data.errors);
+        setFieldErrors(error.response.data.errors);
       } else {
         alert("Failed to update gallery item. Please try again.");
       }
@@ -129,19 +296,27 @@ export default function EditGalleryPage() {
     }
   };
 
-  const removeImage = () => {
-    setFormData(prev => ({ ...prev, image: null }));
-    setImagePreview(
-      gallery?.image_url || (gallery?.image ? `${storageUrl}/storage/${gallery.image}` : null)
-    );
-  };
+  // ── Derived ────────────────────────────────────────────────────────────────
+
+  const activeCount = slots.filter(
+    (s) =>
+      s.kind === "new" || (s.kind === "existing" && !s.markedForRemoval)
+  ).length;
+
+  const removedCount = slots.filter(
+    (s) => s.kind === "existing" && s.markedForRemoval
+  ).length;
+
+  // ── Loading / Not-found states ─────────────────────────────────────────────
 
   if (fetching) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="flex items-center space-x-2">
           <Loader2 className="w-6 h-6 animate-spin text-indigo-600" />
-          <span className="text-gray-600 dark:text-gray-300">Loading gallery item...</span>
+          <span className="text-gray-600 dark:text-gray-300">
+            Loading gallery item...
+          </span>
         </div>
       </div>
     );
@@ -151,7 +326,9 @@ export default function EditGalleryPage() {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">Gallery item not found</h2>
+          <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+            Gallery item not found
+          </h2>
           <Link
             href="/admin/gallery"
             className="mt-4 inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-500"
@@ -164,9 +341,12 @@ export default function EditGalleryPage() {
     );
   }
 
+  // ── Render ─────────────────────────────────────────────────────────────────
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 transition-colors">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
         {/* Header */}
         <div className="mb-8">
           <Link
@@ -176,18 +356,23 @@ export default function EditGalleryPage() {
             <ArrowLeft className="w-4 h-4 mr-1" />
             Back to Gallery
           </Link>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Edit Gallery Item</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Edit Gallery Item
+          </h1>
           <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-            Update gallery item details and image
+            Update details and manage images
           </p>
         </div>
 
-        {/* Form */}
         <div className="bg-white dark:bg-gray-800 shadow-sm rounded-lg border border-gray-200 dark:border-gray-700">
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
+
             {/* Title */}
             <div>
-              <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label
+                htmlFor="title"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
                 Title *
               </label>
               <input
@@ -196,104 +381,284 @@ export default function EditGalleryPage() {
                 name="title"
                 value={formData.title}
                 onChange={handleInputChange}
-                className={`mt-1 block w-full border rounded-md shadow-sm p-2 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm ${
-                  errors.title ? "border-red-300" : "border-gray-300 dark:border-gray-700"
+                className={`mt-1 block w-full border rounded-md shadow-sm px-3 py-2 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm ${
+                  fieldErrors.title
+                    ? "border-red-300"
+                    : "border-gray-300 dark:border-gray-700"
                 }`}
                 placeholder="Enter gallery item title"
               />
-              {errors.title && <p className="mt-1 text-sm text-red-600">{errors.title}</p>}
+              {fieldErrors.title && (
+                <p className="mt-1 text-sm text-red-600">{fieldErrors.title}</p>
+              )}
             </div>
 
             {/* Description */}
             <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label
+                htmlFor="description"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
                 Description
               </label>
               <textarea
                 id="description"
                 name="description"
-                rows={4}
+                rows={3}
                 value={formData.description}
                 onChange={handleInputChange}
-                className="mt-1 block w-full border border-gray-300 dark:border-gray-700 rounded-md shadow-sm p-2 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="Enter gallery item description (optional)"
+                className="mt-1 block w-full border border-gray-300 dark:border-gray-700 rounded-md shadow-sm px-3 py-2 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                placeholder="Enter description (optional)"
               />
             </div>
 
-            {/* Image Upload */}
+            {/* ── Images section ─────────────────────────────────────────── */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Image
-                <span className="text-gray-500 dark:text-gray-400 font-normal ml-1">
-                  (Leave empty to keep current image)
-                </span>
-              </label>
-              {imagePreview ? (
-                <div className="mt-2">
-                  <div className="relative inline-block">
-                    <Image
-                      src={imagePreview}
-                      alt="Preview"
-                      width={300}
-                      height={200}
-                      className="rounded-lg object-cover border border-gray-300 dark:border-gray-700"
-                    />
-                    <button
-                      type="button"
-                      onClick={removeImage}
-                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    Click the X to remove the new image and keep the current one
-                  </p>
-                </div>
-              ) : (
-                <div className="mt-2 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-700 border-dashed rounded-md">
-                  <div className="space-y-1 text-center">
-                    <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
-                    <div className="flex text-sm text-gray-600 dark:text-gray-400">
-                      <label
-                        htmlFor="image"
-                        className="relative cursor-pointer bg-white dark:bg-gray-900 rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500"
+              <div className="flex items-center gap-3 mb-3">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Images
+                </label>
+                {activeCount > 0 && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300">
+                    {activeCount} active
+                  </span>
+                )}
+                {removedCount > 0 && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300">
+                    {removedCount} will be removed
+                  </span>
+                )}
+              </div>
+
+              {/* Image grid */}
+              {slots.length > 0 && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-4">
+                  {slots.map((slot, index) => {
+                    const isNew = slot.kind === "new";
+                    const isRemoving =
+                      slot.kind === "existing" && slot.markedForRemoval;
+                    const src = isNew ? slot.preview : slot.data.url;
+                    const name = isNew ? slot.file.name : slot.data.filename;
+
+                    return (
+                      <div
+                        key={index}
+                        className={`relative rounded-xl overflow-hidden border-2 transition-all duration-200 ${
+                          isRemoving
+                            ? "border-red-400 dark:border-red-500"
+                            : isNew
+                            ? "border-indigo-400 dark:border-indigo-500"
+                            : "border-gray-200 dark:border-gray-700"
+                        }`}
                       >
-                        <span>Upload new image</span>
-                        <input id="image" name="image" type="file" accept="image/*" onChange={handleImageChange} className="sr-only" />
-                      </label>
-                      <p className="pl-1">or drag and drop</p>
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">PNG, JPG, GIF, WebP up to 5MB</p>
-                  </div>
+                        {/* Square image area */}
+                        <div className="aspect-square w-full bg-gray-100 dark:bg-gray-700 relative">
+                          <Image
+                            src={src}
+                            alt={name}
+                            fill
+                            className={`object-cover transition-all duration-200 ${
+                              isRemoving ? "grayscale opacity-50" : ""
+                            }`}
+                            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
+                          />
+
+                          {/* Removal overlay */}
+                          {isRemoving && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <span className="text-xs font-semibold text-white bg-red-500 px-2 py-1 rounded-full shadow">
+                                Will be removed
+                              </span>
+                            </div>
+                          )}
+
+                          {/* "New" badge */}
+                          {isNew && (
+                            <div className="absolute top-2 left-2 pointer-events-none">
+                              <span className="text-xs font-semibold text-white bg-indigo-500 px-1.5 py-0.5 rounded-full shadow">
+                                New
+                              </span>
+                            </div>
+                          )}
+
+                          {/* ── Action buttons (top-right) ── */}
+                          <div className="absolute top-2 right-2 flex flex-col gap-1.5">
+
+                            {/* X button — removes new, toggles removal on existing */}
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveSlot(index)}
+                              title={isRemoving ? "Undo remove" : "Remove image"}
+                              className={`w-7 h-7 rounded-full flex items-center justify-center shadow-lg transition-all focus:outline-none focus:ring-2 focus:ring-offset-1 ${
+                                isRemoving
+                                  ? "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 focus:ring-gray-400"
+                                  : "bg-red-500 text-white hover:bg-red-600 focus:ring-red-400"
+                              }`}
+                            >
+                              {isRemoving ? (
+                                /* Undo arrow icon */
+                                <svg
+                                  className="w-3.5 h-3.5"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2.5}
+                                    d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3"
+                                  />
+                                </svg>
+                              ) : (
+                                <X className="w-3.5 h-3.5" strokeWidth={2.5} />
+                              )}
+                            </button>
+
+                            {/* Replace button — only when not already queued for removal */}
+                            {!isRemoving && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    replaceInputRefs.current.get(index)?.click()
+                                  }
+                                  title="Replace with a different image"
+                                  className="w-7 h-7 rounded-full bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 flex items-center justify-center shadow-lg transition-all focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-indigo-400"
+                                >
+                                  <RefreshCw
+                                    className="w-3.5 h-3.5"
+                                    strokeWidth={2.5}
+                                  />
+                                </button>
+
+                                {/* Hidden per-slot replace input */}
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  className="sr-only"
+                                  ref={(el) => {
+                                    if (el)
+                                      replaceInputRefs.current.set(index, el);
+                                    else replaceInputRefs.current.delete(index);
+                                  }}
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) handleReplaceSlot(index, file);
+                                    e.target.value = "";
+                                  }}
+                                />
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Filename strip */}
+                        <div
+                          className={`px-2 py-1.5 border-t transition-colors ${
+                            isRemoving
+                              ? "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"
+                              : isNew
+                              ? "bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800"
+                              : "bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700"
+                          }`}
+                        >
+                          <p
+                            className={`text-xs truncate ${
+                              isRemoving
+                                ? "text-red-500 dark:text-red-400 line-through"
+                                : isNew
+                                ? "text-indigo-600 dark:text-indigo-400"
+                                : "text-gray-500 dark:text-gray-400"
+                            }`}
+                          >
+                            {name}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
-              {errors.image && <p className="mt-1 text-sm text-red-600">{errors.image}</p>}
-            </div>
 
-            {/* Current Image Info */}
-            {gallery.image && !formData.image && (
-              <div className="bg-gray-50 dark:bg-gray-700 rounded-md p-4">
-                <p className="text-sm text-gray-600 dark:text-gray-300">
-                  <strong>Current image:</strong> {gallery.image}
-                </p>
+              {/* Upload drop zone */}
+              <div
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={handleDrop}
+                className="relative flex flex-col items-center justify-center px-6 py-8 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl cursor-pointer hover:border-indigo-400 dark:hover:border-indigo-500 hover:bg-indigo-50/40 dark:hover:bg-indigo-900/10 transition-all group"
+              >
+                {/* Invisible label covers the whole zone for click-to-upload */}
+                <label
+                  htmlFor="images-bulk-input"
+                  className="absolute inset-0 cursor-pointer"
+                  aria-label="Upload images"
+                />
+                <input
+                  id="images-bulk-input"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleAddImages}
+                  className="sr-only"
+                />
+                <div className="flex flex-col items-center gap-2 pointer-events-none select-none">
+                  <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center group-hover:bg-indigo-200 dark:group-hover:bg-indigo-900 transition-colors">
+                    <ImagePlus className="w-6 h-6 text-indigo-500 dark:text-indigo-400" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400">
+                      Click to add images
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      Select multiple files or drag &amp; drop — PNG, JPG, GIF,
+                      WebP up to 5 MB each
+                    </p>
+                  </div>
+                </div>
               </div>
-            )}
+
+              {imageError && (
+                <p className="mt-2 text-sm text-red-600 dark:text-red-400">
+                  {imageError}
+                </p>
+              )}
+
+              {/* Legend */}
+              <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-5 h-5 rounded-full bg-red-500 flex items-center justify-center">
+                    <X className="w-3 h-3 text-white" strokeWidth={2.5} />
+                  </span>
+                  Remove image
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-5 h-5 rounded-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 flex items-center justify-center shadow-sm">
+                    <RefreshCw
+                      className="w-3 h-3 text-gray-600 dark:text-gray-300"
+                      strokeWidth={2.5}
+                    />
+                  </span>
+                  Replace image
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-3 h-3 rounded-full bg-indigo-500" />
+                  New (unsaved)
+                </span>
+              </div>
+            </div>
 
             {/* Actions */}
             <div className="flex items-center justify-end space-x-3 pt-6 border-t border-gray-200 dark:border-gray-700">
               <Link
                 href="/admin/gallery"
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
                 Cancel
               </Link>
               <button
                 type="submit"
                 disabled={loading}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>
@@ -308,6 +673,7 @@ export default function EditGalleryPage() {
                 )}
               </button>
             </div>
+
           </form>
         </div>
       </div>

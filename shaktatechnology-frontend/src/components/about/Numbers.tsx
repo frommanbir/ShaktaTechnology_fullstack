@@ -15,7 +15,7 @@ const stats = [
 export default function Numbers() {
   return (
     <section className="py-20 font-poppins bg-white dark:bg-gray-900 transition-colors duration-300">
-      <div className="max-w-6xl mx-auto px-6 text-center">
+      <div className="max-w-7xl mx-auto px-6 text-center">
         <motion.h2
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}

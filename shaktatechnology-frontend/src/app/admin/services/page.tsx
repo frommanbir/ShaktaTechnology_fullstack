@@ -3,7 +3,7 @@
 import { useState, useEffect, Fragment } from "react";
 import { getServices, deleteService } from "@/lib/api";
 import { Dialog, Transition } from "@headlessui/react";
-import { Loader2, Trash2, Edit } from "lucide-react";
+import { Loader2, Trash2, Edit, Eye, ChevronDown } from "lucide-react";
 import { TableSkeleton, TableEmptyState } from "@/components/ui/table-skeleton";
 import { Pagination } from "@/components/ui/pagination";
 import Link from "next/link";
@@ -27,6 +27,18 @@ export default function AdminServicesPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null);
+  const [expandedRow, setExpandedRow] = useState<number | null>(null);
+
+  const toggleRow = (id: number) => {
+    setExpandedRow(expandedRow === id ? null : id);
+  };
+
+  const stripHtml = (html: string) => {
+    if (typeof document === 'undefined') return html;
+    const tmp = document.createElement("DIV");
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || "";
+  };
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -135,35 +147,54 @@ export default function AdminServicesPage() {
                 />
               ) : (
                 paginatedServices.map((service, index) => (
-                  <tr key={service.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 font-medium">
-                      {(currentPage - 1) * itemsPerPage + index + 1}
-                    </td>
-                    <td className="px-6 py-4 break-words max-w-xs text-gray-900 dark:text-gray-100">{service.title}</td>
-                    <td className="px-6 py-4 break-words max-w-md text-gray-800 dark:text-gray-200">{service.description || "N/A"}</td>
-                    <td className="px-6 py-4 break-words max-w-xs text-sm text-gray-700 dark:text-gray-300">
-                      {(service.features?.slice(0, 2).join(", ") || "") +
-                        (service.technologies?.length ? ` | ${service.technologies.slice(0, 2).join(", ")}` : "") ||
-                        "N/A"}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex justify-end gap-4">
-                      <Link
-                        href={`/admin/services/${service.id}/edit`}
-                        className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
-                      >
-                        <Edit className="h-5 w-5 inline" />
-                      </Link>
-                      <button
-                        onClick={() => {
-                          setServiceToDelete(service);
-                          setShowDeleteModal(true);
-                        }}
-                        className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-200"
-                      >
-                        <Trash2 className="h-5 w-5 inline" />
-                      </button>
-                    </td>
-                  </tr>
+                  <Fragment key={service.id}>
+                    <tr className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all border-b border-gray-100 dark:border-gray-800">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400 font-mono">
+                        {(currentPage - 1) * itemsPerPage + index + 1}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="font-semibold text-gray-900 dark:text-gray-100 line-clamp-1 max-w-[200px]">{service.title}</div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400 italic">
+                        <div className="line-clamp-2 max-w-[300px]">
+                          {stripHtml(service.description)}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-xs text-gray-500 line-clamp-1 max-w-[200px]">
+                          {stripHtml(service.features?.join(", ") || "No features")}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium sticky right-0 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm">
+                        <div className="flex items-center justify-end gap-2">
+                          <Link
+                            href={`/admin/services/${service.id}/view`}
+                            className="p-2 rounded-lg transition-all text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-blue-400"
+                            title="View Details"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Link>
+                          <Link
+                            href={`/admin/services/${service.id}/edit`}
+                            className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                            title="Edit Service"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Link>
+                          <button
+                            onClick={() => {
+                              setServiceToDelete(service);
+                              setShowDeleteModal(true);
+                            }}
+                            className="p-2 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                            title="Delete Service"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  </Fragment>
                 ))
               )}
             </tbody>

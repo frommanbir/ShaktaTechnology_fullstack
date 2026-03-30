@@ -5,7 +5,9 @@ import { getProject, updateProject } from "@/lib/api";
 import { useRouter, useParams } from "next/navigation";
 import { useToast } from "@/components/Toast";
 import Image from "next/image";
-import { Loader2 } from "lucide-react";
+import { Loader2, X, Save, ArrowLeft, Plus } from "lucide-react";
+import TextEditor from "@/components/global/TextEditor";
+import Link from "next/link";
 
 export default function EditProjectPage() {
   const { toast } = useToast();
@@ -25,6 +27,14 @@ export default function EditProjectPage() {
   const [existingImage, setExistingImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  // Clean up preview URL
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
   const storageUrl = process.env.NEXT_PUBLIC_STORAGE_URL;
 
   const categories = [
@@ -46,10 +56,10 @@ export default function EditProjectPage() {
           client: response.client || "",
           duration: response.duration || "",
           technologies: Array.isArray(response.technologies)
-            ? response.technologies.join(", ")
+            ? response.technologies[0] || ""
             : "",
           key_results: Array.isArray(response.key_results)
-            ? response.key_results.join(", ")
+            ? response.key_results[0] || ""
             : "",
           image: null,
         });
@@ -73,6 +83,13 @@ export default function EditProjectPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
     setFormData((prev) => ({ ...prev, image: file }));
+
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    if (file) {
+      setPreviewUrl(URL.createObjectURL(file));
+    } else {
+      setPreviewUrl(null);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -80,24 +97,14 @@ export default function EditProjectPage() {
     setError("");
     setLoading(true);
 
-    const technologies = formData.technologies
-      .split(",")
-      .map((tech) => tech.trim())
-      .filter((tech) => tech.length > 0);
-
-    const keyResults = formData.key_results
-      .split(",")
-      .map((result) => result.trim())
-      .filter((result) => result.length > 0);
-
     const submitData = {
       title: formData.title,
       description: formData.description,
       category: formData.category,
       client: formData.client,
       duration: formData.duration,
-      technologies,
-      key_results: keyResults,
+      technologies: [formData.technologies],
+      key_results: [formData.key_results],
       image: formData.image,
     };
 
@@ -116,7 +123,7 @@ export default function EditProjectPage() {
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300 min-h-screen">
+    <div className="p-6 max-w-7xl mx-auto transition-colors duration-300">
       <h1 className="text-2xl font-bold mb-6">Edit Project</h1>
 
       {error && (
@@ -206,83 +213,103 @@ export default function EditProjectPage() {
 
           {/* Description */}
           <div>
-            <label className="block text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Description *
             </label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              rows={4}
-              required
+            <TextEditor
+              content={formData.description}
+              onChange={(val) => setFormData(prev => ({ ...prev, description: val }))}
+              placeholder="Describe the project..."
             />
           </div>
 
           {/* Technologies */}
           <div>
-            <label className="block text-gray-700 dark:text-gray-300 mb-2">
-              Technologies (comma-separated)
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Technologies
             </label>
-            <textarea
-              name="technologies"
-              value={formData.technologies}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              rows={3}
-              placeholder="e.g., React, Node.js, Tailwind CSS"
+            <TextEditor
+              content={formData.technologies}
+              onChange={(val) => setFormData(prev => ({ ...prev, technologies: val }))}
+              placeholder="List technologies used..."
             />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              Enter technologies separated by commas.
-            </p>
           </div>
 
           {/* Key Results */}
           <div>
-            <label className="block text-gray-700 dark:text-gray-300 mb-2">
-              Key Results (comma-separated)
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Key Results
             </label>
-            <textarea
-              name="key_results"
-              value={formData.key_results}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              rows={3}
-              placeholder="e.g., Increased engagement by 40%, Reduced load time by 2s"
+            <TextEditor
+              content={formData.key_results}
+              onChange={(val) => setFormData(prev => ({ ...prev, key_results: val }))}
+              placeholder="Highlight key achievements..."
             />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              Enter key results separated by commas.
-            </p>
           </div>
 
           {/* Image */}
           <div>
-            <label className="block text-gray-700 dark:text-gray-300 mb-2">
-              Current Image
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Project Image
             </label>
-            {existingImage ? (
-              <Image
-                src={`${storageUrl}projects/${existingImage}`}
-                alt="Current project image"
-                width={100}
-                height={100}
-                className="object-contain rounded mb-2"
-                loading="lazy"
-                onError={() => console.error("Failed to load project image")}
-              />
-            ) : (
-              <p className="text-gray-500 dark:text-gray-400">
-                No image uploaded
-              </p>
-            )}
-            <label className="block text-gray-700 dark:text-gray-300 mb-2">
-              New Image (Optional)
-            </label>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+              {/* Existing Image */}
+              <div>
+                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">Current Image</p>
+                {existingImage ? (
+                  <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+                    <Image
+                      src={`${storageUrl}projects/${existingImage}`}
+                      alt="Current project image"
+                      fill
+                      className="object-cover"
+                      loading="lazy"
+                      onError={() => console.error("Failed to load project image")}
+                    />
+                  </div>
+                ) : (
+                  <div className="w-full aspect-video rounded-xl border border-dashed border-gray-300 dark:border-gray-700 flex items-center justify-center text-gray-400">
+                    No image uploaded
+                  </div>
+                )}
+              </div>
+
+              {/* New Image Preview */}
+              <div>
+                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">New Selection</p>
+                {previewUrl ? (
+                  <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-blue-200 dark:border-blue-900/30 group bg-gray-50 dark:bg-gray-900/50">
+                    <Image
+                      src={previewUrl}
+                      alt="New preview"
+                      fill
+                      className="object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormData(prev => ({ ...prev, image: null }));
+                        setPreviewUrl(null);
+                      }}
+                      className="absolute top-2 right-2 p-1.5 bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="w-full aspect-video rounded-xl border border-dashed border-gray-300 dark:border-gray-700 flex items-center justify-center text-gray-400 bg-gray-50/50 dark:bg-gray-900/50">
+                    No new image selected
+                  </div>
+                )}
+              </div>
+            </div>
+
             <input
               type="file"
               onChange={handleFileChange}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              accept="image/jpeg,image/png,image/jpg,image/gif,image/svg+xml"
+              accept="image/*"
             />
           </div>
 

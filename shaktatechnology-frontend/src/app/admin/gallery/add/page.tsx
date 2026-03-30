@@ -10,11 +10,11 @@ import Image from "next/image";
 export default function CreateGalleryPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    image: null as File | null,
+    images: [] as File[],
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
@@ -25,26 +25,28 @@ export default function CreateGalleryPage() {
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
 
     const validTypes = ["image/jpeg", "image/png", "image/jpg", "image/gif", "image/webp"];
-    if (!validTypes.includes(file.type)) {
-      setErrors(prev => ({ ...prev, image: "Please select a valid image file (JPEG, PNG, GIF, WebP)" }));
-      return;
+    const validFiles = files.filter(file => validTypes.includes(file.type));
+
+    if (validFiles.length !== files.length) {
+      setErrors(prev => ({ ...prev, images: "Some files were skipped. Please select valid image files (JPEG, PNG, GIF, WebP)" }));
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      setErrors(prev => ({ ...prev, image: "Image size must be less than 5MB" }));
-      return;
+    const sizeValidFiles = validFiles.filter(file => file.size <= 5 * 1024 * 1024);
+    if (sizeValidFiles.length !== validFiles.length) {
+      setErrors(prev => ({ ...prev, images: "Some files were skipped. Image size must be less than 5MB" }));
     }
 
-    setFormData(prev => ({ ...prev, image: file }));
-    setErrors(prev => ({ ...prev, image: "" }));
+    if (sizeValidFiles.length === 0) return;
 
-    const reader = new FileReader();
-    reader.onload = e => setImagePreview(e.target?.result as string);
-    reader.readAsDataURL(file);
+    setFormData(prev => ({ ...prev, images: [...prev.images, ...sizeValidFiles] }));
+    setErrors(prev => ({ ...prev, images: "" }));
+
+    const newPreviews = sizeValidFiles.map(file => URL.createObjectURL(file));
+    setImagePreviews(prev => [...prev, ...newPreviews]);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -53,7 +55,7 @@ export default function CreateGalleryPage() {
 
     const newErrors: { [key: string]: string } = {};
     if (!formData.title.trim()) newErrors.title = "Title is required";
-    if (!formData.image) newErrors.image = "Image is required";
+    if (!formData.images || formData.images.length === 0) newErrors.images = "At least one image is required";
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -65,7 +67,10 @@ export default function CreateGalleryPage() {
       const submitData = new FormData();
       submitData.append("title", formData.title);
       if (formData.description) submitData.append("description", formData.description);
-      if (formData.image) submitData.append("image", formData.image);
+      
+      formData.images.forEach((image, index) => {
+        submitData.append(`images[${index}]`, image);
+      });
 
       await createGallery(submitData);
       router.push("/admin/gallery");
@@ -82,14 +87,22 @@ export default function CreateGalleryPage() {
     }
   };
 
-  const removeImage = () => {
-    setFormData(prev => ({ ...prev, image: null }));
-    setImagePreview(null);
+  const removeImage = (indexToRemove: number) => {
+    setFormData(prev => ({
+      ...prev,
+      images: prev.images.filter((_, index) => index !== indexToRemove)
+    }));
+    setImagePreviews(prev => {
+      const newPreviews = [...prev];
+      URL.revokeObjectURL(newPreviews[indexToRemove]);
+      newPreviews.splice(indexToRemove, 1);
+      return newPreviews;
+    });
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 transition-colors duration-300">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="p-6 transition-colors duration-300">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
           <Link
@@ -146,32 +159,35 @@ export default function CreateGalleryPage() {
             {/* Image Upload */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Image *
+                Images *
               </label>
 
-              {imagePreview ? (
-                <div className="mt-2">
-                  <div className="relative inline-block">
-                    <Image
-                      src={imagePreview}
-                      alt="Preview"
-                      width={300}
-                      height={200}
-                      className="rounded-lg object-cover border border-gray-300 dark:border-gray-600"
-                    />
-                    <button
-                      type="button"
-                      onClick={removeImage}
-                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
+              {imagePreviews.length > 0 && (
+                <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {imagePreviews.map((preview, index) => (
+                    <div key={index} className="relative inline-block">
+                      <Image
+                        src={preview}
+                        alt={`Preview ${index + 1}`}
+                        width={300}
+                        height={200}
+                        className="rounded-lg object-cover w-full h-32 border border-gray-300 dark:border-gray-600"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
                 </div>
-              ) : (
-                <div className="mt-2 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-md transition-colors">
+              )}
+
+              <div className="mt-4 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-md transition-colors">
                   <div className="space-y-1 text-center">
                     <ImageIcon className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
                     <div className="flex text-sm text-gray-600 dark:text-gray-400">
@@ -182,9 +198,10 @@ export default function CreateGalleryPage() {
                         <span>Upload an image</span>
                         <input
                           id="image"
-                          name="image"
+                          name="images"
                           type="file"
                           accept="image/*"
+                          multiple
                           onChange={handleImageChange}
                           className="sr-only"
                         />
@@ -192,12 +209,11 @@ export default function CreateGalleryPage() {
                       <p className="pl-1">or drag and drop</p>
                     </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      PNG, JPG, GIF, WebP up to 5MB
+                      PNG, JPG, GIF, WebP up to 5MB (Multiple files allowed)
                     </p>
                   </div>
                 </div>
-              )}
-              {errors.image && <p className="mt-1 text-sm text-red-600 dark:text-red-500">{errors.image}</p>}
+              {errors.images && <p className="mt-1 text-sm text-red-600 dark:text-red-500">{errors.images}</p>}
             </div>
 
             {/* Actions */}

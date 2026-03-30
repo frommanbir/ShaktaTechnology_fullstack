@@ -61,7 +61,8 @@ class GalleryController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+            'images' => 'nullable|array',
+            'images.*' => 'image|mimes:jpg,jpeg,png,webp|max:5120',
         ]);
 
         try {
@@ -69,8 +70,13 @@ class GalleryController extends Controller
             $gallery->title = $request->title;
             $gallery->description = $request->description;
 
-            if ($request->hasFile('image')) {
-                $gallery->image = CloudinaryHelper::uploadImage($request->file('image'), 'galleries');
+            if ($request->hasFile('images')) {
+                $imageUrls = [];
+                foreach ($request->file('images') as $file) {
+                    $imageUrls[] = CloudinaryHelper::uploadImage($file, 'galleries');
+                }
+                $gallery->images = $imageUrls;
+                $gallery->image = count($imageUrls) > 0 ? $imageUrls[0] : null;
             }
 
             $gallery->save();
@@ -98,7 +104,10 @@ class GalleryController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
+            'images' => 'nullable|array',
+            'images.*' => 'image|mimes:jpg,jpeg,png,webp|max:5120',
+            'existing_images' => 'nullable|array',
+            'existing_images.*' => 'string',
         ]);
 
         try {
@@ -106,15 +115,25 @@ class GalleryController extends Controller
             $gallery->title = $request->title;
             $gallery->description = $request->description;
 
-            if ($request->hasFile('image')) {
-                // delete old Cloudinary image
-                if ($gallery->image) {
-                    CloudinaryHelper::deleteImage($gallery->image);
-                }
+            $existingImages = $request->input('existing_images', []);
+            $currentImages = $gallery->images ?? [];
 
-                // upload new
-                $gallery->image = CloudinaryHelper::uploadImage($request->file('image'), 'galleries');
+            // Find images to delete
+            $imagesToDelete = array_diff($currentImages, $existingImages);
+            foreach ($imagesToDelete as $imgToDelete) {
+                CloudinaryHelper::deleteImage($imgToDelete);
             }
+
+            $finalImages = $existingImages;
+
+            if ($request->hasFile('images')) {
+                foreach ($request->file('images') as $file) {
+                    $finalImages[] = CloudinaryHelper::uploadImage($file, 'galleries');
+                }
+            }
+
+            $gallery->images = $finalImages;
+            $gallery->image = count($finalImages) > 0 ? $finalImages[0] : null;
 
             $gallery->save();
 
@@ -141,7 +160,11 @@ class GalleryController extends Controller
         try {
             $gallery = Gallery::findOrFail($id);
 
-            if ($gallery->image) {
+            if (!empty($gallery->images)) {
+                foreach ($gallery->images as $img) {
+                    CloudinaryHelper::deleteImage($img);
+                }
+            } elseif ($gallery->image) {
                 CloudinaryHelper::deleteImage($gallery->image);
             }
 

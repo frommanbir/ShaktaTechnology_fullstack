@@ -12,7 +12,12 @@ class Gallery extends Model
     protected $fillable = [
         'title',
         'image',
+        'images',
         'description',
+    ];
+
+    protected $casts = [
+        'images' => 'array',
     ];
 
   }

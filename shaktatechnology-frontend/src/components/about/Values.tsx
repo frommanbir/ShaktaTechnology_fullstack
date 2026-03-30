@@ -29,7 +29,7 @@ const values = [
 export default function Values() {
   return (
     <section className="bg-white dark:bg-gray-900 py-20 text-gray-900 dark:text-gray-100">
-      <div className="max-w-6xl mx-auto px-6">
+      <div className="max-w-7xl mx-auto px-6">
         {/* Animated Heading */}
         <motion.div
           initial="hidden"

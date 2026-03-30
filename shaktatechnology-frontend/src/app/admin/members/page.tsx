@@ -16,6 +16,7 @@ import {
   Download,
   X,
   Trash2,
+  Eye,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -136,7 +137,7 @@ export default function AdminMembersPage() {
         body: contactData,
         theme: "plain",
         styles: { fontSize: 10, cellPadding: 1 },
-        columnStyles: { 0: { fontStyle: "bold", width: 40 } },
+        columnStyles: { 0: { fontStyle: "bold", cellWidth: 40 } },
         margin: { left: 20 }
       });
 
@@ -342,8 +343,7 @@ export default function AdminMembersPage() {
   }, [fetchMembers]);
 
   return (
-    <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors">
-      <div className="max-w-6xl mx-auto">
+    <div className="p-6 max-w-7xl mx-auto transition-colors">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             Members
@@ -418,13 +418,13 @@ export default function AdminMembersPage() {
                       </span>
                     </td>
                     <td className="py-3 px-4 flex gap-2">
-                      <button
-                        onClick={() => setSelectedMember(member)}
+                      <Link
+                        href={`/admin/members/${member.id}/view`}
                         className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 transition-colors"
-                        title="View Profile"
+                        title="View Details"
                       >
-                        <User size={18} />
-                      </button>
+                        <Eye size={18} />
+                      </Link>
                       <Link
                         href={`/admin/members/${member.id}/edit`}
                         className="p-2 text-gray-600 dark:text-gray-400 hover:text-green-600 transition-colors"
@@ -634,6 +634,5 @@ export default function AdminMembersPage() {
           </Dialog>
         </Transition>
       </div>
-    </div>
   );
 }

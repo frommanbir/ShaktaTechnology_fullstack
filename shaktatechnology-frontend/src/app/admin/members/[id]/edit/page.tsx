@@ -151,14 +151,14 @@ export default function EditMemberPage() {
   ];
 
   if (loading) return (
-    <div className="flex items-center justify-center min-h-screen">
+    <div className="flex items-center justify-center p-20">
       <Loader2 className="w-12 h-12 animate-spin text-blue-600" />
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-8 transition-colors">
-      <div className="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden">
+    <div className="p-4 md:p-8 transition-colors">
+      <div className="max-w-7xl mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden">
         <div className="bg-blue-600 p-6">
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
             <User className="w-6 h-6" />

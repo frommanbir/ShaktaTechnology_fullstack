@@ -1,9 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createProject } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/Toast";
+import TextEditor from "@/components/global/TextEditor";
+import { X, Save, ArrowLeft, Plus } from "lucide-react";
+import Image from "next/image";
 
 export default function AddProjectPage() {
   const { toast } = useToast();
@@ -20,6 +23,14 @@ export default function AddProjectPage() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  // Clean up preview URL
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
 
   const categories = [
     "Web Development",
@@ -39,6 +50,13 @@ export default function AddProjectPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
     setFormData((prev) => ({ ...prev, image: file }));
+    
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    if (file) {
+      setPreviewUrl(URL.createObjectURL(file));
+    } else {
+      setPreviewUrl(null);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -46,24 +64,14 @@ export default function AddProjectPage() {
     setError("");
     setLoading(true);
 
-    const technologies = formData.technologies
-      .split(",")
-      .map((tech) => tech.trim())
-      .filter((tech) => tech.length > 0);
-
-    const keyResults = formData.key_results
-      .split(",")
-      .map((result) => result.trim())
-      .filter((result) => result.length > 0);
-
     const submitData = {
       title: formData.title,
       description: formData.description,
       category: formData.category,
       client: formData.client,
       duration: formData.duration,
-      technologies,
-      key_results: keyResults,
+      technologies: [formData.technologies],
+      key_results: [formData.key_results],
       image: formData.image,
     };
 
@@ -82,7 +90,7 @@ export default function AddProjectPage() {
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300 min-h-screen">
+    <div className="p-6 max-w-7xl mx-auto transition-colors duration-300">
       <h1 className="text-2xl font-bold mb-6">Add Project</h1>
 
       {error && (
@@ -167,66 +175,79 @@ export default function AddProjectPage() {
 
         {/* Description */}
         <div>
-          <label className="block text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Description *
           </label>
-          <textarea
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            rows={4}
-            required
+          <TextEditor
+            content={formData.description}
+            onChange={(val) => setFormData(prev => ({ ...prev, description: val }))}
+            placeholder="Describe the project..."
           />
         </div>
 
         {/* Technologies */}
         <div>
-          <label className="block text-gray-700 dark:text-gray-300 mb-2">
-            Technologies (comma-separated)
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Technologies
           </label>
-          <textarea
-            name="technologies"
-            value={formData.technologies}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            rows={3}
-            placeholder="e.g., React, Node.js, Tailwind CSS"
+          <TextEditor
+            content={formData.technologies}
+            onChange={(val) => setFormData(prev => ({ ...prev, technologies: val }))}
+            placeholder="List technologies used..."
           />
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            Enter technologies separated by commas.
-          </p>
         </div>
 
         {/* Key Results */}
         <div>
-          <label className="block text-gray-700 dark:text-gray-300 mb-2">
-            Key Results (comma-separated)
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Key Results
           </label>
-          <textarea
-            name="key_results"
-            value={formData.key_results}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            rows={3}
-            placeholder="e.g., Increased user engagement by 40%, Reduced load time by 2s"
+          <TextEditor
+            content={formData.key_results}
+            onChange={(val) => setFormData(prev => ({ ...prev, key_results: val }))}
+            placeholder="Highlight key achievements..."
           />
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            Enter key results separated by commas.
-          </p>
         </div>
 
         {/* Image */}
         <div>
-          <label className="block text-gray-700 dark:text-gray-300 mb-2">
-            Image (Optional)
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Project Image
           </label>
-          <input
-            type="file"
-            onChange={handleFileChange}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            accept="image/jpeg,image/png,image/jpg,image/gif,image/svg+xml"
-          />
+          
+          <div className="flex flex-col gap-4">
+            {previewUrl ? (
+              <div className="relative w-full max-w-md aspect-video rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 group">
+                <Image
+                  src={previewUrl}
+                  alt="Preview"
+                  fill
+                  className="object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFormData(prev => ({ ...prev, image: null }));
+                    setPreviewUrl(null);
+                  }}
+                  className="absolute top-2 right-2 p-1.5 bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            ) : (
+              <div className="w-full max-w-md aspect-video rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-700 flex flex-col items-center justify-center text-gray-500 dark:text-gray-400 bg-gray-50/50 dark:bg-gray-900/50">
+                <p className="text-sm">No image selected</p>
+              </div>
+            )}
+            
+            <input
+              type="file"
+              onChange={handleFileChange}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              accept="image/*"
+            />
+          </div>
         </div>
 
         {/* Buttons */}

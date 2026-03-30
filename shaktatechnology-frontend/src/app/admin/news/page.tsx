@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getNews, deleteNews } from "@/lib/api";
+import { Loader2, Trash2, Edit, Eye, Newspaper, Star } from "lucide-react";
 import { News } from "@/components/types/news";
 import { TableSkeleton, TableEmptyState } from "@/components/ui/table-skeleton";
 import { Pagination } from "@/components/ui/pagination";
@@ -58,8 +59,8 @@ export default function NewsPage() {
 
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 transition-colors duration-300">
-      <div className="max-w-6xl mx-auto">
+    <div className="p-6 transition-colors duration-300">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
@@ -67,7 +68,7 @@ export default function NewsPage() {
           </h1>
           <Link
             href="/admin/news/add"
-            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+            className="flex items-center gap-2 px-6 py-2.5 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-all shadow-lg shadow-purple-500/20 active:scale-95 font-semibold"
           >
             + Add New Article
           </Link>
@@ -147,20 +148,35 @@ export default function NewsPage() {
                         </span>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                       <Link
-                        href={`/admin/news/${news.id}/edit`}
-                        className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300"
-                      >
-                        Edit
-                      </Link>
-                      <button
-                        onClick={() => handleDelete(news.id)}
-                        disabled={deletingId === news.id}
-                        className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 disabled:opacity-50"
-                      >
-                        {deletingId === news.id ? "Deleting..." : "Delete"}
-                      </button>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex items-center justify-end gap-2">
+                        <Link
+                          href={`/admin/news/${news.id}/view`}
+                          className="p-2 rounded-lg transition-all text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-blue-400"
+                          title="View Details"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Link>
+                        <Link
+                          href={`/admin/news/${news.id}/edit`}
+                          className="p-2 text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                          title="Edit Article"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Link>
+                        <button
+                          onClick={() => handleDelete(news.id)}
+                          disabled={deletingId === news.id}
+                          className="p-2 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
+                          title="Delete Article"
+                        >
+                          {deletingId === news.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))

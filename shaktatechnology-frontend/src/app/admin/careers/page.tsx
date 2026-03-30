@@ -6,7 +6,8 @@ import { getCareers, deleteCareer, toggleCareerStatus } from "@/lib/api";
 import { Career } from "@/components/types/CareerTypes";
 import { TableSkeleton, TableEmptyState } from "@/components/ui/table-skeleton";
 import { Pagination } from "@/components/ui/pagination";
-import { Plus, Edit, Trash2, Briefcase, ToggleLeft, ToggleRight, Search, ChevronDown } from "lucide-react";
+import { Plus, Edit, Trash2, Briefcase, ToggleLeft, ToggleRight, Search, ChevronDown, Eye } from "lucide-react";
+import { Fragment } from "react";
 import { useToast } from "@/components/Toast";
 
 type FilterStatus = "all" | "active" | "inactive";
@@ -21,6 +22,18 @@ export default function CareersAdminPage() {
   const [filter, setFilter] = useState<FilterStatus>("all");
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
+  const [expandedRow, setExpandedRow] = useState<number | null>(null);
+
+  const toggleRow = (id: number) => {
+    setExpandedRow(expandedRow === id ? null : id);
+  };
+
+  const stripHtml = (html: string) => {
+    if (typeof document === 'undefined') return html;
+    const tmp = document.createElement("DIV");
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || "";
+  };
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -122,8 +135,7 @@ export default function CareersAdminPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 transition-colors duration-300">
-      <div className="max-w-6xl mx-auto">
+    <div className="p-6 max-w-7xl mx-auto transition-colors duration-300">
         {/* Header */}
         <div className="flex flex-col gap-4 mb-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -237,77 +249,83 @@ export default function CareersAdminPage() {
                   paginatedCareers.map((career, index) => {
                     const isActive = career.is_active !== false;
                     return (
-                      <tr
-                        key={career.id}
-                        className="hover:bg-gray-50/80 dark:hover:bg-gray-700/40 transition-colors group"
-                      >
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                          {(currentPage - 1) * itemsPerPage + index + 1}
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">{career.title}</div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{career.type}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                          {career.department || "N/A"}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                          {career.location || "N/A"}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                            isActive
-                              ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
-                              : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
-                          }`}>
-                            <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${isActive ? "bg-emerald-500" : "bg-gray-400"}`} />
-                            {isActive ? "Active" : "Inactive"}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                          <div className="flex justify-end gap-1">
-                            {/* Toggle Active/Inactive */}
-                            <button
-                              onClick={() => handleToggleStatus(career)}
-                              disabled={togglingId === career.id}
-                              title={isActive ? "Deactivate" : "Activate"}
-                              className={`p-2 rounded-lg transition-colors disabled:opacity-50 ${
-                                isActive
-                                  ? "text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/30"
-                                  : "text-gray-400 hover:bg-gray-100 dark:text-gray-500 dark:hover:bg-gray-700"
-                              }`}
-                            >
-                              {togglingId === career.id ? (
-                                <span className="w-4 h-4 border-2 border-current border-t-transparent animate-spin rounded-full inline-block" />
-                              ) : isActive ? (
-                                <ToggleRight size={20} />
-                              ) : (
-                                <ToggleLeft size={20} />
-                              )}
-                            </button>
+                      <Fragment key={career.id}>
+                        <tr className="hover:bg-gray-50/80 dark:hover:bg-gray-700/40 transition-all group border-b border-gray-100 dark:border-gray-700/50">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 font-mono">
+                            {(currentPage - 1) * itemsPerPage + index + 1}
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">{career.title}</div>
+                            <div className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-widest font-bold mt-1">{career.type}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
+                            {career.department || "N/A"}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
+                            {career.location || "N/A"}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                              isActive
+                                ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
+                                : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
+                            }`}>
+                              <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${isActive ? "bg-emerald-500" : "bg-gray-400"}`} />
+                              {isActive ? "Active" : "Inactive"}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm sticky right-0 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm">
+                            <div className="flex justify-end gap-1">
+                              <Link
+                                href={`/admin/careers/${career.id}/view`}
+                                className="p-2 rounded-lg transition-all text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-blue-400"
+                                title="View Details"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Link>
+                              
+                              <button
+                                onClick={() => handleToggleStatus(career)}
+                                disabled={togglingId === career.id}
+                                title={isActive ? "Deactivate" : "Activate"}
+                                className={`p-2 rounded-lg transition-colors disabled:opacity-50 ${
+                                  isActive
+                                    ? "text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/30"
+                                    : "text-gray-400 hover:bg-gray-100 dark:text-gray-500 dark:hover:bg-gray-700"
+                                }`}
+                              >
+                                {togglingId === career.id ? (
+                                  <span className="w-4 h-4 border-2 border-current border-t-transparent animate-spin rounded-full inline-block" />
+                                ) : isActive ? (
+                                  <ToggleRight size={18} />
+                                ) : (
+                                  <ToggleLeft size={18} />
+                                )}
+                              </button>
 
-                            <Link
-                              href={`/admin/careers/${career.id}/edit`}
-                              className="p-2 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
-                              title="Edit Job"
-                            >
-                              <Edit size={18} />
-                            </Link>
-                            <button
-                              onClick={() => handleDelete(career.id)}
-                              disabled={deletingId === career.id}
-                              className="p-2 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30 rounded-lg transition-colors disabled:opacity-50"
-                              title="Delete Job"
-                            >
-                              {deletingId === career.id ? (
-                                <span className="w-4 h-4 border-2 border-red-600 border-t-transparent animate-spin rounded-full inline-block" />
-                              ) : (
-                                <Trash2 size={18} />
-                              )}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
+                              <Link
+                                href={`/admin/careers/${career.id}/edit`}
+                                className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                                title="Edit Job"
+                              >
+                                <Edit size={18} />
+                              </Link>
+                              <button
+                                onClick={() => handleDelete(career.id)}
+                                disabled={deletingId === career.id}
+                                className="p-2 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
+                                title="Delete Job"
+                              >
+                                {deletingId === career.id ? (
+                                  <span className="w-4 h-4 border-2 border-red-600 border-t-transparent animate-spin rounded-full inline-block" />
+                                ) : (
+                                  <Trash2 size={18} />
+                                )}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      </Fragment>
                     );
                   })
                 )}
@@ -329,6 +347,5 @@ export default function CareersAdminPage() {
           </div>
         )}
       </div>
-    </div>
   );
 }

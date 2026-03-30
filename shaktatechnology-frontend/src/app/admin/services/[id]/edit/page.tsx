@@ -106,7 +106,7 @@ export default function EditServicePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-6">
+      <div className="p-6">
         <div className="max-w-4xl mx-auto">
           <div className="text-center py-20 text-slate-600 dark:text-slate-300">Loading service...</div>
         </div>
@@ -116,7 +116,7 @@ export default function EditServicePage() {
 
   if (error && !service) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-6">
+      <div className="p-6">
         <div className="max-w-4xl mx-auto text-center">
           <div className="py-20 text-red-500 dark:text-red-400">{error}</div>
           <Link href="/admin/services" className="text-indigo-500 hover:text-indigo-600 font-medium">
@@ -128,8 +128,8 @@ export default function EditServicePage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-6">
-      <div className="max-w-4xl mx-auto">
+    <div className="p-6">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
           <Link
