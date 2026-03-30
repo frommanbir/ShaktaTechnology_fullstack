@@ -18,11 +18,11 @@ interface TestimonialFormProps {
   submitText: string;
 }
 
-export default function TestimonialForm({ 
-  testimonial, 
-  onSubmit, 
-  loading, 
-  submitText 
+export default function TestimonialForm({
+  testimonial,
+  onSubmit,
+  loading,
+  submitText
 }: TestimonialFormProps) {
   const [preview, setPreview] = useState(testimonial?.image || '');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -41,7 +41,7 @@ export default function TestimonialForm({
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    
+
     if (fileInputRef.current?.files?.[0]) {
       formData.append('image', fileInputRef.current.files[0]);
     }
@@ -53,8 +53,8 @@ export default function TestimonialForm({
 
   useEffect(() => {
     if (testimonial?.image) {
-      const url = testimonial.image.startsWith('http') 
-        ? testimonial.image 
+      const url = testimonial.image.startsWith('http')
+        ? testimonial.image
         : `${storageUrl}${testimonial.image}`;
       setPreview(url);
     }
@@ -113,23 +113,23 @@ export default function TestimonialForm({
         <div className="flex flex-col sm:flex-row items-center gap-6">
           <div className="flex-shrink-0">
             {preview ? (
-               <div className="relative group">
-                 <img
-                   src={preview}
-                   alt="Preview"
-                   className="w-24 h-24 rounded-full object-cover border-4 border-white dark:border-gray-800 shadow-lg"
-                 />
-                 <button
-                   type="button"
-                   onClick={() => {
-                     setPreview('');
-                     if (fileInputRef.current) fileInputRef.current.value = '';
-                   }}
-                   className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 transition-colors"
-                 >
-                   <X size={14} />
-                 </button>
-               </div>
+              <div className="relative group">
+                <img
+                  src={preview}
+                  alt="Preview"
+                  className="w-24 h-24 rounded-full object-cover border-4 border-white dark:border-gray-800 shadow-lg"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPreview('');
+                    if (fileInputRef.current) fileInputRef.current.value = '';
+                  }}
+                  className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 transition-colors"
+                >
+                  <X size={14} />
+                </button>
+              </div>
             ) : (
               <div className="w-24 h-24 rounded-full bg-gray-100 dark:bg-gray-900 border-2 border-dashed border-gray-300 dark:border-gray-700 flex flex-col items-center justify-center text-gray-400">
                 <ImageIcon size={24} className="mb-1 opacity-50" />
@@ -149,8 +149,8 @@ export default function TestimonialForm({
               htmlFor="photo-upload"
               className="flex items-center justify-center gap-2 px-6 py-3 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-all font-semibold text-gray-600 dark:text-gray-300 group max-w-sm"
             >
-               <Camera size={18} className="group-hover:text-blue-500 transition-colors" />
-               Select Profile Photo
+              <Camera size={18} className="group-hover:text-blue-500 transition-colors" />
+              Select Profile Photo
             </label>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 font-medium">
               Recommended: Square image, transparent or solid background, minimum 200x200px.
@@ -174,11 +174,11 @@ export default function TestimonialForm({
           className="flex items-center gap-2 px-8 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100 shadow-lg shadow-blue-500/20 font-bold"
         >
           {loading ? (
-             <span className="flex items-center gap-2">Processing...</span>
+            <span className="flex items-center gap-2">Processing...</span>
           ) : (
             <>
-               <Save size={18} />
-               {submitText}
+              <Save size={18} />
+              {submitText}
             </>
           )}
         </button>

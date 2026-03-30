@@ -112,9 +112,10 @@ export default function UserProjects() {
               </div>
             )}
             <h3 className="font-semibold text-lg">{project.title}</h3>
-            <p className="text-gray-600 dark:text-gray-300 mt-2 line-clamp-3">
-              {project.description}
-            </p>
+            <div 
+              className="text-gray-600 dark:text-gray-300 mt-2 line-clamp-3 rich-text-content"
+              dangerouslySetInnerHTML={{ __html: project.description }}
+            />
           </motion.div>
         ))}
       </motion.div>

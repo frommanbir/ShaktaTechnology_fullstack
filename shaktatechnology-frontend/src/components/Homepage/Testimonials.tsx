@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { getTestimonials } from '@/lib/api';
+import { getImageUrl } from '@/lib/utils';
 import { Loader2, ChevronLeft, ChevronRight, Quote } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -162,15 +163,15 @@ export default function Testimonials() {
                 </p>
 
                 {/* Author */}
-                <div className={`flex items-center gap-3 mt-2 ${currentTestimonial.image_url ? '' : 'flex-col'}`}>
-                  {currentTestimonial.image_url && (
+                <div className={`flex items-center gap-3 mt-2 ${currentTestimonial.image_url || currentTestimonial.image ? '' : 'flex-col'}`}>
+                  {(currentTestimonial.image_url || currentTestimonial.image) && (
                     <img
-                      src={currentTestimonial.image_url}
+                      src={getImageUrl(currentTestimonial.image_url || currentTestimonial.image)}
                       alt={currentTestimonial.name}
                       className="w-12 h-12 rounded-full object-cover ring-2 ring-violet-200 dark:ring-violet-800 flex-shrink-0"
                     />
                   )}
-                  <div className={currentTestimonial.image_url ? 'text-left' : 'text-center'}>
+                  <div className={currentTestimonial.image_url || currentTestimonial.image ? 'text-left' : 'text-center'}>
                     <h3 className="font-semibold text-base text-gray-900 dark:text-gray-100 leading-tight">
                       {currentTestimonial.name}
                     </h3>
@@ -212,11 +213,10 @@ export default function Testimonials() {
                 key={idx}
                 onClick={() => goToIndex(idx)}
                 aria-label={`Go to testimonial ${idx + 1}`}
-                className={`rounded-full transition-all duration-300 ${
-                  current === idx
+                className={`rounded-full transition-all duration-300 ${current === idx
                     ? 'w-6 h-3 bg-violet-600 dark:bg-violet-400'
                     : 'w-3 h-3 bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500'
-                }`}
+                  }`}
               />
             ))}
           </div>

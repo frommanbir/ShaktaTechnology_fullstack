@@ -9,12 +9,12 @@ import Heading from '@/components/about/Heading';
 export default function AboutPage() {
   return (
     <div className="font-poppins">
-      <Heading />
-      <MissionVision />
-      <Numbers />
-      <Values />
-      <Team />
-      <Story />
+      <div id="overview"><Heading /></div>
+      <div id="mission"><MissionVision /></div>
+      <div id="impact"><Numbers /></div>
+      <div id="values"><Values /></div>
+      <div id="team"><Team /></div>
+      <div id="story"><Story /></div>
     </div>
   );
 }

@@ -73,11 +73,11 @@ class TestimonialController extends Controller
         ]);
 
         if ($request->hasFile('image')) {
-            // Delete old image
-            if ($testimonial->image && Storage::disk('public')->exists($testimonial->image)) {
-                Storage::disk('public')->delete($testimonial->image);
+            // Delete old image if it exists on Cloudinary
+            if ($testimonial->image) {
+                CloudinaryHelper::deleteImage($testimonial->image);
             }
-            $validated['image'] = $request->file('image')->store('testimonials', 'public');
+            $validated['image'] = CloudinaryHelper::uploadImage($request->file('image'), 'testimonials');
         }
 
         $testimonial->update($validated);

@@ -181,9 +181,10 @@ export default function TeamPage() {
                   </p>
                 )}
                 {member.short_description && (
-                  <p className="mt-3 text-gray-700 dark:text-gray-300 text-sm leading-relaxed line-clamp-3">
-                    {member.short_description}
-                  </p>
+                  <div
+                    className="mt-3 text-gray-700 dark:text-gray-300 text-sm leading-relaxed line-clamp-3"
+                    dangerouslySetInnerHTML={{ __html: member.short_description }}
+                  />
                 )}
               </div>
             </motion.div>

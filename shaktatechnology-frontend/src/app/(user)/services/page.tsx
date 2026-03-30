@@ -101,9 +101,10 @@ export default function ServicesPage() {
                   {service.price}
                 </p>
               )}
-              <p className="text-slate-600 dark:text-slate-300 mb-4">
-                {service.description}
-              </p>
+              <div 
+                className="text-slate-600 dark:text-slate-300 mb-4 rich-text-content"
+                dangerouslySetInnerHTML={{ __html: service.description }}
+              />
 
               {service.features && service.features.length > 0 && (
                 <>

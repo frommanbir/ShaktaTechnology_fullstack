@@ -116,9 +116,10 @@ export default function FAQ() {
                       transition={{ duration: 0.3, ease: "easeInOut" }}
                     >
                       <div className="px-6 lg:px-8 pb-6 lg:pb-8 border-t border-gray-100 dark:border-gray-700">
-                        <p className="text-gray-600 dark:text-gray-300 leading-relaxed text-base lg:text-lg">
-                          {faq.answer}
-                        </p>
+                        <div 
+                          className="text-gray-600 dark:text-gray-300 leading-relaxed text-base lg:text-lg rich-text-content"
+                          dangerouslySetInnerHTML={{ __html: faq.answer }}
+                        />
                       </div>
                     </motion.div>
                   )}

@@ -119,9 +119,10 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 md:p-8 shadow-sm">
           {news.description && (
             <div className="mb-8">
-              <p className="text-lg md:text-xl font-medium leading-relaxed text-gray-700 dark:text-gray-200">
-                {news.description}
-              </p>
+              <div 
+                className="text-lg md:text-xl font-medium leading-relaxed text-gray-700 dark:text-gray-200 rich-text-content"
+                dangerouslySetInnerHTML={{ __html: news.description }}
+              />
             </div>
           )}
 
@@ -132,7 +133,10 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
                 fetch the full article content from your API.
               </p>
               {news.description && (
-                <p className="text-gray-600 dark:text-gray-400 italic">{news.description}</p>
+                <div 
+                  className="text-gray-600 dark:text-gray-400 italic rich-text-content"
+                  dangerouslySetInnerHTML={{ __html: news.description }}
+                />
               )}
             </div>
           </div>

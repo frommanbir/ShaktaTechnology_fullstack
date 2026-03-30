@@ -151,9 +151,10 @@ export default function FAQ() {
                     transition={{ duration: 0.3, ease: "easeInOut" }}
                     className="overflow-hidden"
                   >
-                    <div className="px-6 pb-6 text-gray-600 dark:text-gray-300 border-t border-gray-100 dark:border-gray-700 leading-relaxed">
-                      {faq.answer}
-                    </div>
+                    <div 
+                      className="px-6 pb-6 text-gray-600 dark:text-gray-300 border-t border-gray-100 dark:border-gray-700 leading-relaxed rich-text-content"
+                      dangerouslySetInnerHTML={{ __html: faq.answer }}
+                    />
                   </motion.div>
                 )}
               </AnimatePresence>

@@ -90,13 +90,12 @@ export default function NewsCard({ news, featured = false }: NewsCardProps) {
 
         {/* Description */}
         {news.description && (
-          <p
+          <div
             className={`mt-2 ${
               featured ? "text-sm md:text-base line-clamp-3" : "text-sm line-clamp-2"
-            } text-gray-600 dark:text-gray-300`}
-          >
-            {news.description}
-          </p>
+            } text-gray-600 dark:text-gray-300 rich-text-content`}
+            dangerouslySetInnerHTML={{ __html: news.description }}
+          />
         )}
 
         {/* Read More Button */}

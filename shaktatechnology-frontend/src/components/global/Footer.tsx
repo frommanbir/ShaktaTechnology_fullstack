@@ -13,7 +13,7 @@ import {
   Linkedin,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { trackVisit, getSettings } from "@/lib/api";
+import { trackVisit, getSettings, getServices } from "@/lib/api";
 
 const SOCIAL_ICONS: Record<string, any> = {
   twitter: Twitter,
@@ -22,9 +22,19 @@ const SOCIAL_ICONS: Record<string, any> = {
   facebook: Facebook,
 };
 
+interface Service {
+  id: number;
+  title: string;
+  created_at: string;
+}
+
+const CACHE_KEY = "footer_data_cache";
+const CACHE_TTL = 10 * 60 * 1000; // 10 minutes in ms
+
 export default function Footer() {
   const [visitCount, setVisitCount] = useState<number | null>(null);
   const [settings, setSettings] = useState<Record<string, string>>({});
+  const [services, setServices] = useState<Service[]>([]);
   const [showButton, setShowButton] = useState(false);
 
   const scrollToTop = () => {
@@ -32,27 +42,60 @@ export default function Footer() {
   };
 
   useEffect(() => {
-  const fetchData = async () => {
-    try {
-      // Only increment once per browser session (not per refresh)
-      const sessionKey = "shakta_visit_tracked";
-      const visited = sessionStorage.getItem(sessionKey);
+    const fetchData = async () => {
+      try {
+        // Track visit
+        const sessionKey = "shakta_visit_tracked";
+        const visited = sessionStorage.getItem(sessionKey);
+        if (!visited) {
+          await trackVisit(window.location.pathname);
+          sessionStorage.setItem(sessionKey, "true");
+        }
 
-      if (!visited) {
-        await trackVisit(window.location.pathname);
-        sessionStorage.setItem(sessionKey, "true");
+        // Check cache
+        const cachedStr = localStorage.getItem(CACHE_KEY);
+        if (cachedStr) {
+          const { data, timestamp } = JSON.parse(cachedStr);
+          if (Date.now() - timestamp < CACHE_TTL) {
+            setSettings(data.settings);
+            setVisitCount(Number(data.settings.visits) || 0);
+            setServices(data.services);
+            return;
+          }
+        }
+
+        // Fetch fresh data if no cache or expired
+        const [settingsData, servicesRes] = await Promise.all([
+          getSettings(),
+          getServices(1)
+        ]);
+
+        const servicesList = Array.isArray(servicesRes.data) 
+          ? servicesRes.data
+              .sort((a: Service, b: Service) => 
+                new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+              )
+              .slice(0, 5)
+          : [];
+
+        // Update states
+        setSettings(settingsData);
+        setVisitCount(Number(settingsData.visits) || 0);
+        setServices(servicesList);
+
+        // Save to cache
+        localStorage.setItem(CACHE_KEY, JSON.stringify({
+          data: { settings: settingsData, services: servicesList },
+          timestamp: Date.now()
+        }));
+
+      } catch (err) {
+        console.error("Error fetching footer data:", err);
       }
+    };
 
-      const data = await getSettings();
-      setSettings(data);
-      setVisitCount(Number(data.visits) || 0);
-    } catch (err) {
-      console.error("Error fetching settings:", err);
-    }
-  };
-
-  fetchData();
-}, []);
+    fetchData();
+  }, []);
 
   // Scroll listener for "back to top" button
   useEffect(() => {
@@ -124,13 +167,23 @@ export default function Footer() {
           <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
             <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Services</h3>
             <ul className="space-y-2 text-gray-600 dark:text-gray-400">
-              {["Web Development", "Mobile Apps", "Cloud Solutions", "Digital Transformation"].map((service) => (
-                <motion.li key={service} whileHover={{ x: 6 }} transition={{ type: "spring", stiffness: 300 }}>
-                  <a href="/services" className="hover:text-purple-500 dark:hover:text-purple-400 transition-colors">
-                    {service}
-                  </a>
-                </motion.li>
-              ))}
+              {services.length > 0 ? (
+                services.map((service) => (
+                  <motion.li key={service.id} whileHover={{ x: 6 }} transition={{ type: "spring", stiffness: 300 }}>
+                    <a href="/services" className="hover:text-purple-500 dark:hover:text-purple-400 transition-colors">
+                      {service.title}
+                    </a>
+                  </motion.li>
+                ))
+              ) : (
+                ["Web Development", "Mobile Apps", "Cloud Solutions", "Digital Transformation"].map((service) => (
+                  <motion.li key={service} whileHover={{ x: 6 }} transition={{ type: "spring", stiffness: 300 }}>
+                    <a href="/services" className="hover:text-purple-500 dark:hover:text-purple-400 transition-colors">
+                      {service}
+                    </a>
+                  </motion.li>
+                ))
+              )}
             </ul>
           </motion.div>
 

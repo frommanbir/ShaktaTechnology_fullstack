@@ -177,12 +177,11 @@ export default function AdminFaqsPage() {
                     </td>
 
                     <td className="px-6 py-4 max-w-xs">
-                        <p
-                            className="line-clamp-2 cursor-pointer hover:underline"
+                        <div
+                            className="line-clamp-2 cursor-pointer hover:underline text-sm rich-text-content"
                             onClick={() => setSelectedFaq(faq)}
-                        >
-                            {faq.answer}
-                        </p>
+                            dangerouslySetInnerHTML={{ __html: faq.answer }}
+                        />
                         </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium sticky right-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm">
                       <div className="flex items-center justify-end gap-2">
@@ -274,7 +273,10 @@ export default function AdminFaqsPage() {
                   </div>
                   <div className="border-t border-gray-100 dark:border-gray-700 pt-4">
                     <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1.5">Answer</p>
-                    <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{selectedFaq?.answer}</p>
+                    <div 
+                      className="text-gray-700 dark:text-gray-300 leading-relaxed rich-text-content"
+                      dangerouslySetInnerHTML={{ __html: selectedFaq?.answer || "" }}
+                    />
                   </div>
                 </div>
                 <div className="flex justify-end mt-6 gap-3">

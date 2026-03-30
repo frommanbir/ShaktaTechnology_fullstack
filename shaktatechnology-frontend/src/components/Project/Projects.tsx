@@ -132,9 +132,10 @@ export default function Projects() {
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
                   Client: {project.client} • Duration: {project.duration}
                 </p>
-                <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 line-clamp-4 overflow-auto">
-                  {project.description}
-                </p>
+                <div 
+                  className="text-gray-600 dark:text-gray-300 text-sm mb-4 line-clamp-4 overflow-auto rich-text-content"
+                  dangerouslySetInnerHTML={{ __html: project.description }}
+                />
 
                 <div className="mb-3">
                   <h4 className="font-medium text-sm text-gray-800 dark:text-gray-100 mb-1">

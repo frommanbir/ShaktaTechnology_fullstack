@@ -29,7 +29,7 @@ export default function TestimonialsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  
+
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [testimonialToDelete, setTestimonialToDelete] = useState<Testimonial | null>(null);
@@ -116,31 +116,31 @@ export default function TestimonialsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <div>
-           <h1 className="text-2xl font-bold">Client Testimonials</h1>
-           <p className="text-sm text-gray-500 mt-1 dark:text-gray-400">Manage and display feedback from your satisfied clients.</p>
+          <h1 className="text-2xl font-bold">Client Testimonials</h1>
+          <p className="text-sm text-gray-500 mt-1 dark:text-gray-400">Manage and display feedback from your satisfied clients.</p>
         </div>
 
         <div className="flex items-center gap-4 w-full sm:w-auto">
-            {/* Search LEFT */}
-            <div className="w-[250px]">
-              <SearchBar onSearch={handleSearch} placeholder="Search testimonials..." />
-            </div>
+          {/* Search LEFT */}
+          <div className="w-[250px]">
+            <SearchBar onSearch={handleSearch} placeholder="Search testimonials..." />
+          </div>
 
-            {/* Button RIGHT */}
-            <Link
-              href="/admin/testimonials/add"
-              className="px-4 py-2 bg-blue-600 text-white flex items-center gap-2 rounded-md hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition"
-            >
-              + Add Testimonial
-            </Link>
+          {/* Button RIGHT */}
+          <Link
+            href="/admin/testimonials/add"
+            className="px-4 py-2 bg-blue-600 text-white flex items-center gap-2 rounded-md hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition"
+          >
+            + Add Testimonial
+          </Link>
         </div>
       </div>
 
       {/* Error */}
       {error && (
-         <div className="bg-red-100 dark:bg-red-900/40 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 px-4 py-3 rounded mb-4">
-           {error}
-         </div>
+        <div className="bg-red-100 dark:bg-red-900/40 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 px-4 py-3 rounded mb-4">
+          {error}
+        </div>
       )}
 
       <div className="bg-white dark:bg-slate-900 rounded-lg shadow overflow-hidden transition-colors duration-300">
@@ -172,7 +172,7 @@ export default function TestimonialsPage() {
               {loading ? (
                 <TableSkeleton rows={itemsPerPage} columns={5} showImage={true} />
               ) : filteredTestimonials.length === 0 ? (
-                <TableEmptyState 
+                <TableEmptyState
                   message={
                     <>
                       No testimonials found.{" "}
@@ -180,8 +180,8 @@ export default function TestimonialsPage() {
                         Add the first one
                       </Link>
                     </>
-                  } 
-                  colSpan={6} 
+                  }
+                  colSpan={6}
                 />
               ) : (
                 paginatedTestimonials.map((testimonial, index) => (
@@ -192,7 +192,7 @@ export default function TestimonialsPage() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="relative w-10 h-10">
                         <Image
-                          src={getImageUrl(testimonial.image_url)}
+                          src={getImageUrl(testimonial.image_url || testimonial.image)}
                           alt={testimonial.name}
                           fill
                           sizes="40px"
@@ -201,7 +201,7 @@ export default function TestimonialsPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
-                      <p 
+                      <p
                         className="cursor-pointer hover:underline"
                         onClick={() => setSelectedTestimonial(testimonial)}
                       >
@@ -212,7 +212,7 @@ export default function TestimonialsPage() {
                       {testimonial.role}
                     </td>
                     <td className="px-6 py-4 max-w-xs text-sm text-gray-700 dark:text-gray-200">
-                      <p 
+                      <p
                         className="line-clamp-2 cursor-pointer hover:underline"
                         onClick={() => setSelectedTestimonial(testimonial)}
                       >
@@ -303,10 +303,10 @@ export default function TestimonialsPage() {
                   </button>
                 </div>
                 <div className="space-y-4">
-                  <div className="flex items-center gap-4">
+                  <div className="items-center flex gap-4">
                     <div className="relative w-16 h-16">
                       <Image
-                        src={getImageUrl(selectedTestimonial?.image || '')}
+                        src={getImageUrl(selectedTestimonial?.image_url || selectedTestimonial?.image || '')}
                         alt={selectedTestimonial?.name || ''}
                         fill
                         sizes="64px"
