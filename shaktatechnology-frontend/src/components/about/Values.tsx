@@ -28,7 +28,7 @@ const values = [
 
 export default function Values() {
   return (
-    <section className="bg-white dark:bg-gray-900 py-20 text-gray-900 dark:text-gray-100">
+    <section className="bg-white dark:bg-gray-900 py-6 lg:py-6 text-gray-900 dark:text-gray-100">
       <div className="max-w-7xl mx-auto px-6">
         {/* Animated Heading */}
         <motion.div

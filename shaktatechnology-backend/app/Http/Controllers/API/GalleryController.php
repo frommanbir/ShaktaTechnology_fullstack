@@ -58,22 +58,39 @@ class GalleryController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        $request->validate([
+        $validator = \Validator::make($request->all(), [
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'images' => 'nullable|array',
             'images.*' => 'image|mimes:jpg,jpeg,png,webp|max:5120',
         ]);
 
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => $validator->errors()->first(),
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
         try {
             $gallery = new Gallery();
             $gallery->title = $request->title;
             $gallery->description = $request->description;
 
+            $imageUrls = [];
             if ($request->hasFile('images')) {
-                $imageUrls = [];
-                foreach ($request->file('images') as $file) {
-                    $imageUrls[] = CloudinaryHelper::uploadImage($file, 'galleries');
+                $files = $request->file('images');
+                foreach ($files as $index => $file) {
+                    try {
+                        if (!$file->isValid()) {
+                            $validator->errors()->add("images.{$index}", "The images.{$index} failed to upload.");
+                            throw new \Illuminate\Validation\ValidationException($validator);
+                        }
+                        $imageUrls[] = CloudinaryHelper::uploadImage($file, 'galleries');
+                    } catch (\Exception $e) {
+                        $validator->errors()->add("images.{$index}", "The images.{$index} failed to upload. " . ($e->getMessage() ?? 'Upload error'));
+                        throw new \Illuminate\Validation\ValidationException($validator);
+                    }
                 }
                 $gallery->images = $imageUrls;
                 $gallery->image = count($imageUrls) > 0 ? $imageUrls[0] : null;
@@ -87,6 +104,11 @@ class GalleryController extends Controller
                 'data' => $gallery,
             ], 201);
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+                'errors' => $e->validator->errors()
+            ], 422);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -101,7 +123,7 @@ class GalleryController extends Controller
      */
     public function update(Request $request, int $id): JsonResponse
     {
-        $request->validate([
+        $validator = \Validator::make($request->all(), [
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'images' => 'nullable|array',
@@ -109,6 +131,13 @@ class GalleryController extends Controller
             'existing_images' => 'nullable|array',
             'existing_images.*' => 'string',
         ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => $validator->errors()->first(),
+                'errors' => $validator->errors()
+            ], 422);
+        }
 
         try {
             $gallery = Gallery::findOrFail($id);
@@ -127,8 +156,18 @@ class GalleryController extends Controller
             $finalImages = $existingImages;
 
             if ($request->hasFile('images')) {
-                foreach ($request->file('images') as $file) {
-                    $finalImages[] = CloudinaryHelper::uploadImage($file, 'galleries');
+                $files = $request->file('images');
+                foreach ($files as $index => $file) {
+                    try {
+                        if (!$file->isValid()) {
+                            $validator->errors()->add("images.{$index}", "The images.{$index} failed to upload.");
+                            throw new \Illuminate\Validation\ValidationException($validator);
+                        }
+                        $finalImages[] = CloudinaryHelper::uploadImage($file, 'galleries');
+                    } catch (\Exception $e) {
+                        $validator->errors()->add("images.{$index}", "The images.{$index} failed to upload. " . ($e->getMessage() ?? 'Upload error'));
+                        throw new \Illuminate\Validation\ValidationException($validator);
+                    }
                 }
             }
 
@@ -143,6 +182,11 @@ class GalleryController extends Controller
                 'data' => $gallery,
             ]);
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+                'errors' => $e->validator->errors()
+            ], 422);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

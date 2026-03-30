@@ -36,7 +36,7 @@ export default function Stats() {
   };
 
   return (
-    <section className="py-16 text-center px-4 bg-gray-50 dark:bg-slate-900">
+    <section className="py-10 text-center px-4 bg-gray-50 dark:bg-slate-900">
       <h2 className="font-extrabold text-3xl sm:text-4xl lg:text-5xl text-gray-900 dark:text-white">
         Trusted by industry leaders worldwide
       </h2>

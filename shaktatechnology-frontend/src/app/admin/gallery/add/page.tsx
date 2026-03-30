@@ -3,12 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createGallery } from "@/lib/api";
+import { useToast } from "@/components/Toast";
 import { ArrowLeft, Save, Loader2, Image as ImageIcon } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
 export default function CreateGalleryPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [formData, setFormData] = useState({
@@ -16,12 +18,10 @@ export default function CreateGalleryPage() {
     description: "",
     images: [] as File[],
   });
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    if (errors[name]) setErrors(prev => ({ ...prev, [name]: "" }));
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -32,18 +32,27 @@ export default function CreateGalleryPage() {
     const validFiles = files.filter(file => validTypes.includes(file.type));
 
     if (validFiles.length !== files.length) {
-      setErrors(prev => ({ ...prev, images: "Some files were skipped. Please select valid image files (JPEG, PNG, GIF, WebP)" }));
+      toast({
+        title: "Invalid file types",
+        description: "Please select valid image files (PNG, JPG, GIF, WebP)",
+        variant: "destructive"
+      });
+      return;
     }
 
     const sizeValidFiles = validFiles.filter(file => file.size <= 5 * 1024 * 1024);
     if (sizeValidFiles.length !== validFiles.length) {
-      setErrors(prev => ({ ...prev, images: "Some files were skipped. Image size must be less than 5MB" }));
+      toast({
+        title: "File too large",
+        description: "Images must be less than 5MB each",
+        variant: "destructive"
+      });
+      return;
     }
 
     if (sizeValidFiles.length === 0) return;
 
     setFormData(prev => ({ ...prev, images: [...prev.images, ...sizeValidFiles] }));
-    setErrors(prev => ({ ...prev, images: "" }));
 
     const newPreviews = sizeValidFiles.map(file => URL.createObjectURL(file));
     setImagePreviews(prev => [...prev, ...newPreviews]);
@@ -53,12 +62,21 @@ export default function CreateGalleryPage() {
     e.preventDefault();
     setLoading(true);
 
-    const newErrors: { [key: string]: string } = {};
-    if (!formData.title.trim()) newErrors.title = "Title is required";
-    if (!formData.images || formData.images.length === 0) newErrors.images = "At least one image is required";
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
+    if (!formData.title.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Title is required",
+        variant: "destructive"
+      });
+      setLoading(false);
+      return;
+    }
+    if (!formData.images || formData.images.length === 0) {
+      toast({
+        title: "Validation Error",
+        description: "At least one image is required",
+        variant: "destructive"
+      });
       setLoading(false);
       return;
     }
@@ -73,14 +91,53 @@ export default function CreateGalleryPage() {
       });
 
       await createGallery(submitData);
+      toast({
+        title: "Success",
+        description: "Gallery created successfully"
+      });
       router.push("/admin/gallery");
       router.refresh();
     } catch (error: any) {
       console.error("Failed to create gallery:", error);
-      if (error.response?.data?.errors) {
-        setErrors(error.response.data.errors);
+      
+      // Handle validation errors from backend
+      if (error.response?.status === 422 && error.response?.data) {
+        const { message = "Upload failed", errors = {} } = error.response.data;
+        
+        // Check if errors are related to image upload
+        const hasImageErrors = Object.keys(errors).some(key => key.includes('images'));
+        
+        if (hasImageErrors) {
+          // Show a clean, user-friendly message about image requirements
+          toast({
+            title: "Image Upload Failed",
+            description: "All images must be in PNG, JPG, GIF, or WebP format and less than 5MB each. Please check your images and try again.",
+            variant: "destructive"
+          });
+        } else {
+          // Show other validation errors
+          const errorList = Object.entries(errors).flatMap(([field, msgs]: [string, any[]]) => 
+            msgs.map((msg: string) => `${field}: ${msg}`)
+          ).join('\n');
+          toast({
+            title: message,
+            description: errorList || "Please check your input",
+            variant: "destructive"
+          });
+        }
+      } else if (error.response?.status === 413) {
+        // Handle payload too large error
+        toast({
+          title: "File Too Large",
+          description: "The total upload size is too large. Please ensure each image is less than 5MB.",
+          variant: "destructive"
+        });
       } else {
-        alert("Failed to create gallery item. Please try again.");
+        toast({
+          title: "Failed to create gallery",
+          description: error.response?.data?.message || "Please try again.",
+          variant: "destructive"
+        });
       }
     } finally {
       setLoading(false);
@@ -132,12 +189,9 @@ export default function CreateGalleryPage() {
                 name="title"
                 value={formData.title}
                 onChange={handleInputChange}
-                className={`mt-1 block w-full border rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 transition-colors
-                  ${errors.title ? "border-red-300 dark:border-red-500" : "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"}
-                `}
+                className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2 transition-colors bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                 placeholder="Enter gallery item title"
               />
-              {errors.title && <p className="mt-1 text-sm text-red-600 dark:text-red-500">{errors.title}</p>}
             </div>
 
             {/* Description */}
@@ -159,7 +213,7 @@ export default function CreateGalleryPage() {
             {/* Image Upload */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Images *
+                Images * (Up to 5MB each)
               </label>
 
               {imagePreviews.length > 0 && (
@@ -188,32 +242,31 @@ export default function CreateGalleryPage() {
               )}
 
               <div className="mt-4 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-md transition-colors">
-                  <div className="space-y-1 text-center">
-                    <ImageIcon className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
-                    <div className="flex text-sm text-gray-600 dark:text-gray-400">
-                      <label
-                        htmlFor="image"
-                        className="relative cursor-pointer bg-white dark:bg-gray-900 rounded-md font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500"
-                      >
-                        <span>Upload an image</span>
-                        <input
-                          id="image"
-                          name="images"
-                          type="file"
-                          accept="image/*"
-                          multiple
-                          onChange={handleImageChange}
-                          className="sr-only"
-                        />
-                      </label>
-                      <p className="pl-1">or drag and drop</p>
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      PNG, JPG, GIF, WebP up to 5MB (Multiple files allowed)
-                    </p>
+                <div className="space-y-1 text-center">
+                  <ImageIcon className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
+                  <div className="flex text-sm text-gray-600 dark:text-gray-400">
+                    <label
+                      htmlFor="image"
+                      className="relative cursor-pointer bg-white dark:bg-gray-900 rounded-md font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500"
+                    >
+                      <span>Upload images</span>
+                      <input
+                        id="image"
+                        name="images"
+                        type="file"
+                        accept="image/jpeg,image/png,image/jpg,image/gif,image/webp"
+                        multiple
+                        onChange={handleImageChange}
+                        className="sr-only"
+                      />
+                    </label>
+                    <p className="pl-1">or drag and drop</p>
                   </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    PNG, JPG, GIF, WebP up to 5MB each (Multiple files allowed)
+                  </p>
                 </div>
-              {errors.images && <p className="mt-1 text-sm text-red-600 dark:text-red-500">{errors.images}</p>}
+              </div>
             </div>
 
             {/* Actions */}

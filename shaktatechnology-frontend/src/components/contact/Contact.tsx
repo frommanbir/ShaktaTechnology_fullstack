@@ -109,7 +109,7 @@ export default function Contact() {
 
   return (
     <motion.section
-      className="py-20 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200"
+      className="pb-10 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200"
       initial={{ opacity: 0, y: 40 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
@@ -243,7 +243,7 @@ export default function Contact() {
             <h3 className="text-lg font-semibold mb-4">
               Let’s Start a Conversation
             </h3>
-            <p className="text-gray-500 dark:text-gray-400 mb-6">
+            <p className="text-gray-500 dark:text-gray-400 mb-6 text-justify">
               We’re here to help you bring your ideas to life. Whether you need
               a new website, mobile app, or complete digital transformation, our
               team is ready to deliver exceptional results.

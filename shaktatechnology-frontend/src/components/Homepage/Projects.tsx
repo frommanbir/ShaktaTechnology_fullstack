@@ -48,7 +48,7 @@ export default function UserProjects() {
   }
 
   return (
-    <section className="py-16 text-center transition-colors duration-300 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden">
+    <section className="py-6 text-center transition-colors duration-300 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden">
       {/* Animated heading */}
       <motion.h2
         className="text-3xl font-bold"
@@ -120,7 +120,7 @@ export default function UserProjects() {
       </motion.div>
 
       <motion.button
-        className="mt-8 px-5 py-3 border border-gray-300 dark:border-slate-600 rounded-xl text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-800 transition"
+        className="mt-8 px-5 py-3 border cursor-pointer border-gray-300 dark:border-slate-600 rounded-xl text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-800 transition"
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.97 }}
         onClick={() => (window.location.href = "/projects")}

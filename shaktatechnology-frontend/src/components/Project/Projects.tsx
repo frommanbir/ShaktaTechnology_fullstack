@@ -73,7 +73,7 @@ export default function Projects() {
   };
 
   return (
-    <section className="py-20 bg-gray-50 dark:bg-gray-900">
+    <section className="py-10 bg-gray-50 dark:bg-gray-900">
       <Container>
         {loading ? (
           <div className="flex justify-center items-center py-16">
@@ -116,7 +116,6 @@ export default function Projects() {
                 ) : (
                   <div className="mb-4 w-full h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center rounded-lg">
                     <span className="text-gray-500 dark:text-gray-300 text-sm">
-                      No Image
                     </span>
                   </div>
                 )}

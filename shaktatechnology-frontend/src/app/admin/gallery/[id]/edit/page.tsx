@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { getGallery, updateGallery } from "@/lib/api";
+import { useToast } from "@/components/Toast";
 import {
   ArrowLeft,
   Save,
@@ -55,6 +56,7 @@ export default function EditGalleryPage() {
   const router = useRouter();
   const params = useParams();
   const id = parseInt(params.id as string);
+  const { toast } = useToast();
 
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
@@ -65,8 +67,6 @@ export default function EditGalleryPage() {
 
   const [formData, setFormData] = useState({ title: "", description: "" });
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-
-  // Per-slot hidden file inputs for individual replace
   const replaceInputRefs = useRef<Map<number, HTMLInputElement>>(new Map());
 
   // ── Fetch ──────────────────────────────────────────────────────────────────
@@ -147,13 +147,17 @@ export default function EditGalleryPage() {
   };
 
   // Add multiple new images via the bulk upload zone
-  const handleAddImages = (e: React.ChangeEvent<HTMLInputElement>) => {
+const handleAddImages = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
     const { valid, error } = validateFiles(files);
     if (error) {
-      setImageError(error);
+      toast({
+        title: "Upload Error",
+        description: error,
+        variant: "destructive"
+      });
       e.target.value = "";
       return;
     }
@@ -176,7 +180,11 @@ export default function EditGalleryPage() {
     if (!files || files.length === 0) return;
     const { valid, error } = validateFiles(files);
     if (error) {
-      setImageError(error);
+      toast({
+        title: "Upload Error",
+        description: error,
+        variant: "destructive"
+      });
       return;
     }
     setImageError("");
@@ -209,7 +217,11 @@ export default function EditGalleryPage() {
   const handleReplaceSlot = (index: number, file: File) => {
     const { valid, error } = validateFiles([file]);
     if (error) {
-      setImageError(error);
+      toast({
+        title: "Upload Error",
+        description: error,
+        variant: "destructive"
+      });
       return;
     }
     setImageError("");
@@ -247,10 +259,12 @@ export default function EditGalleryPage() {
     e.preventDefault();
     setLoading(true);
 
-    const newErrors: Record<string, string> = {};
-    if (!formData.title.trim()) newErrors.title = "Title is required";
-    if (Object.keys(newErrors).length > 0) {
-      setFieldErrors(newErrors);
+    if (!formData.title.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Title is required",
+        variant: "destructive"
+      });
       setLoading(false);
       return;
     }
@@ -282,14 +296,55 @@ export default function EditGalleryPage() {
         .forEach((s) => submitData.append("images[]", s.file));
 
       await updateGallery(id, submitData);
+      toast({
+        title: "Success",
+        description: "Gallery updated successfully"
+      });
       router.push("/admin/gallery");
       router.refresh();
     } catch (error: any) {
       console.error("Failed to update gallery:", error);
-      if (error.response?.data?.errors) {
-        setFieldErrors(error.response.data.errors);
+      
+      // Handle validation errors from backend
+      if (error.response?.status === 422 && error.response?.data) {
+        const { message = "Upload failed", errors = {} } = error.response.data;
+        
+        // Check if errors are related to image upload
+        const hasImageErrors = Object.keys(errors).some(key => 
+          key.includes('images') || key.includes('existing_images')
+        );
+        
+        if (hasImageErrors) {
+          // Show a clean, user-friendly message about image requirements
+          toast({
+            title: "Image Upload Failed",
+            description: "All images must be in PNG, JPG, GIF, or WebP format and less than 5MB each. Please check your images and try again.",
+            variant: "destructive"
+          });
+        } else {
+          // Show other validation errors
+          const errorList = Object.entries(errors).flatMap(([field, msgs]) => 
+            (msgs as string[]).map((msg) => `${field}: ${msg}`)
+          ).join('\n');
+          toast({
+            title: message,
+            description: errorList || "Please check your input",
+            variant: "destructive"
+          });
+        }
+      } else if (error.response?.status === 413) {
+        // Handle payload too large error
+        toast({
+          title: "File Too Large",
+          description: "The total upload size is too large. Please ensure each image is less than 5MB.",
+          variant: "destructive"
+        });
       } else {
-        alert("Failed to update gallery item. Please try again.");
+        toast({
+          title: "Failed to update gallery",
+          description: error.response?.data?.message || "Please try again.",
+          variant: "destructive"
+        });
       }
     } finally {
       setLoading(false);
@@ -416,7 +471,7 @@ export default function EditGalleryPage() {
             <div>
               <div className="flex items-center gap-3 mb-3">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Images
+                  Images * (Up to 5MB each)
                 </label>
                 {activeCount > 0 && (
                   <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300">
@@ -535,7 +590,7 @@ export default function EditGalleryPage() {
                                 {/* Hidden per-slot replace input */}
                                 <input
                                   type="file"
-                                  accept="image/*"
+                                  accept="image/jpeg,image/png,image/jpg,image/gif,image/webp"
                                   className="sr-only"
                                   ref={(el) => {
                                     if (el)
@@ -596,7 +651,7 @@ export default function EditGalleryPage() {
                 <input
                   id="images-bulk-input"
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png,image/jpg,image/gif,image/webp"
                   multiple
                   onChange={handleAddImages}
                   className="sr-only"

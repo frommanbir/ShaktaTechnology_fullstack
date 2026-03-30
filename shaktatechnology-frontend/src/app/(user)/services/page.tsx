@@ -133,7 +133,7 @@ export default function ServicesPage() {
               )}
             </div>
             <Link href="/contact" passHref>
-              <button className="w-full mt-auto flex items-center justify-center gap-2 bg-indigo-500 dark:bg-indigo-400 text-white font-medium py-2 rounded-xl hover:bg-indigo-600 dark:hover:bg-indigo-500 transition">
+              <button className="w-full mt-auto flex items-center cursor-pointer justify-center gap-2 bg-indigo-500 dark:bg-indigo-400 text-white font-medium py-2 rounded-xl hover:bg-indigo-600 dark:hover:bg-indigo-500 transition">
                 Get Started <ArrowRight size={16} />
               </button>
             </Link>
@@ -147,19 +147,19 @@ export default function ServicesPage() {
         whileInView={{ opacity: 1 }}
         transition={{ duration: 0.6 }}
         viewport={{ once: true }}
-        className="text-center mt-24 bg-gradient-to-r from-indigo-500/10 to-indigo-400/10 py-16 rounded-2xl mx-6"
+        className="text-center mt-24 py-4 rounded-2xl mx-6"
       >
         <h3 className="text-2xl sm:text-3xl font-bold">
           Ready to Start Your Project?
         </h3>
         <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link href="/contact" passHref>
-            <button className="bg-indigo-500 dark:bg-indigo-400 text-white px-6 py-3 rounded-xl hover:bg-indigo-600 dark:hover:bg-indigo-500 transition">
+            <button className="bg-indigo-500 dark:bg-indigo-400 text-white px-6 py-3 rounded-xl hover:bg-indigo-600 dark:hover:bg-indigo-500 transition cursor-pointer">
               Get Free Consultation
             </button>
           </Link>
           <Link href="/projects" passHref>
-            <button className="border border-slate-300 dark:border-gray-600 px-6 py-3 rounded-xl hover:bg-slate-100 dark:hover:bg-gray-700 transition">
+            <button className="border cursor-pointer border-slate-300 dark:border-gray-600 px-6 py-3 rounded-xl hover:bg-slate-100 dark:hover:bg-gray-700 transition">
               View Our Work
             </button>
           </Link>

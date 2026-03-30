@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 
 export default function Story() {
   return (
-    <section className="min-h-screen flex items-center py-32 sm:py-20 
+    <section className="py-10 flex items-center not-odd:sm:py-4 
                        bg-white dark:bg-gray-900 
                        text-gray-800 dark:text-gray-100 
                        transition-colors duration-300 overflow-hidden">

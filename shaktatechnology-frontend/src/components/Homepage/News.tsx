@@ -81,7 +81,7 @@ export default function HomeNews() {
 
   return (
     <section
-      className="py-16 sm:py-20 lg:py-24 bg-gray-50 dark:bg-gray-900 transition-colors duration-300 px-4 sm:px-6 lg:px-8"
+      className="py-6 sm:py-10 lg:py-6 bg-gray-50 dark:bg-gray-900 transition-colors duration-300 px-4 sm:px-6 lg:px-8"
       aria-labelledby="latest-news"
     >
       {/* Animated Header */}
@@ -224,7 +224,7 @@ export default function HomeNews() {
                   }
             }
             whileTap={{ scale: 0.98 }}
-            className="group inline-flex items-center gap-2 px-6 py-3 bg-violet-600 dark:bg-violet-500 text-white rounded-full font-medium text-sm sm:text-base transition-all duration-300"
+            className="group inline-flex cursor-pointer items-center gap-2 px-6 py-3 bg-violet-600 dark:bg-violet-500 text-white rounded-full font-medium text-sm sm:text-base transition-all duration-300"
           >
             View All News
             <motion.span

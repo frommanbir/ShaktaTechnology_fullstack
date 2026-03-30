@@ -83,7 +83,7 @@ const JobCard: React.FC<{ career: Career }> = ({ career }) => {
         {/* Right: Apply Button */}
         <div className="flex-shrink-0">
           <a
-            href={`mailto:hr@shaktatech.com?subject=Application for ${encodeURIComponent(career.title)}&body=Dear Hiring Team,%0D%0A%0D%0AI am interested in applying for the ${encodeURIComponent(career.title)} position.%0D%0A%0D%0A[Your message here]%0D%0A%0D%0ARegards,%0D%0A[Your Name]`}
+            href={`mailto:info@shaktatechnology.com?subject=Application for ${encodeURIComponent(career.title)}&body=Dear Hiring Team,%0D%0A%0D%0AI am interested in applying for the ${encodeURIComponent(career.title)} position.%0D%0A%0D%0A[Your message here]%0D%0A%0D%0ARegards,%0D%0A[Your Name]`}
             className="px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-full text-sm font-medium hover:opacity-90 transition inline-block"
           >
             Apply Now

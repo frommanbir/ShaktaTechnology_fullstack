@@ -62,7 +62,7 @@ export default function ServicesPage() {
   };
 
   return (
-    <main className="bg-gradient-to-b from-white to-slate-50 dark:from-slate-900 dark:to-slate-950 text-slate-900 dark:text-slate-100 pb-20 transition-colors duration-300">
+    <main className="bg-gradient-to-b from-white to-slate-50 dark:from-slate-900 dark:to-slate-950 text-slate-900 dark:text-slate-100 pb-10 transition-colors duration-300">
       {/* Header Section */}
       <motion.section
         className="text-center py-20 px-4"
@@ -135,7 +135,7 @@ export default function ServicesPage() {
             </div>
 
             <Link href="/contact" passHref>
-              <button className="w-full mt-auto flex items-center justify-center gap-2 bg-indigo-500 dark:bg-indigo-600 text-white font-medium py-2 rounded-xl hover:bg-indigo-600 dark:hover:bg-indigo-500 transition">
+              <button className="w-full cursor-pointer mt-auto flex items-center justify-center gap-2 bg-indigo-500 dark:bg-indigo-600 text-white font-medium py-2 rounded-xl hover:bg-indigo-600 dark:hover:bg-indigo-500 transition">
                 Get Started <ArrowRight size={16} />
               </button>
             </Link>
@@ -154,13 +154,13 @@ export default function ServicesPage() {
         <h3 className="text-2xl sm:text-3xl font-bold">Ready to Start Your Project?</h3>
         <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link href="/contact" passHref>
-            <button className="bg-indigo-500 dark:bg-indigo-600 text-white px-6 py-3 rounded-xl hover:bg-indigo-600 dark:hover:bg-indigo-500 transition">
+            <button className="bg-indigo-500 cursor-pointer dark:bg-indigo-600 text-white px-6 py-3 rounded-xl hover:bg-indigo-600 dark:hover:bg-indigo-500 transition">
               Get Free Consultation
             </button>
           </Link>
 
           <Link href="/projects" passHref>
-            <button className="border border-slate-300 dark:border-slate-600 px-6 py-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition text-slate-800 dark:text-slate-200">
+            <button className="border cursor-pointer border-slate-300 dark:border-slate-600 px-6 py-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition text-slate-800 dark:text-slate-200">
               View Our Work
             </button>
           </Link>

@@ -30,7 +30,7 @@ const HiringProcess = () => {
 
   return (
     <motion.section
-      className="bg-white dark:bg-gray-900 py-20 transition-colors duration-300"
+      className="bg-white dark:bg-gray-900 py-4 transition-colors duration-300"
       initial={{ opacity: 0, y: 40 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}

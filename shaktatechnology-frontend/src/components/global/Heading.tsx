@@ -10,7 +10,8 @@ interface PropsType {
 
 const Heading = ({ title, desc }: PropsType) => {
   return (
-    <section className="min-h-[50vh] flex flex-col items-center justify-center text-center px-6 space-y-4 bg-white text-black dark:bg-gray-900 dark:text-white">
+    // <section className="min-h-[50vh] flex flex-col items-center justify-center text-center px-6 space-y-4 bg-white text-black dark:bg-gray-900 dark:text-white">
+    <section className="py-16 flex flex-col items-center justify-center text-center px-6 space-y-4 bg-white text-black dark:bg-gray-900 dark:text-white">
       <motion.h1
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}

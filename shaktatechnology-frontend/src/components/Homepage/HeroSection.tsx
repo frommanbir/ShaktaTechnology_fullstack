@@ -121,7 +121,7 @@ export default function HeroSection() {
       >
         <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}>
           <Link href="/contact">
-            <button className="group flex items-center justify-center bg-primary dark:bg-indigo-600 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl hover:bg-violet-700 dark:hover:bg-indigo-500 transition-all duration-300">
+            <button className="group cursor-pointer flex items-center justify-center bg-primary dark:bg-indigo-600 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl hover:bg-violet-700 dark:hover:bg-indigo-500 transition-all duration-300">
               Get Started Today
               <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
             </button>
@@ -130,7 +130,7 @@ export default function HeroSection() {
 
         <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}>
           <Link href="/projects">
-            <button className="group flex items-center justify-center border border-gray-300 dark:border-slate-600 px-6 py-3 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-800 dark:text-gray-200 transition-all duration-300">
+            <button className="group cursor-pointer flex items-center justify-center border border-gray-300 dark:border-slate-600 px-6 py-3 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-800 dark:text-gray-200 transition-all duration-300">
               <Play className="mr-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
               Watch Demo
             </button>

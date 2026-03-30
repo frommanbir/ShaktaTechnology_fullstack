@@ -46,7 +46,7 @@ const JobList: React.FC = () => {
 
   return (
     <motion.section
-      className="py-16 bg-gray-50 dark:bg-gray-900"
+      className="py-4 bg-gray-50 dark:bg-gray-900"
       initial={{ opacity: 0, y: 40 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}

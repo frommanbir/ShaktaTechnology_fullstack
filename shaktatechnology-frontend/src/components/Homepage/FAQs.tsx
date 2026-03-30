@@ -67,7 +67,7 @@ export default function FAQ() {
 
   return (
     <section
-      className="py-16 lg:py-24 px-4 sm:px-6 lg:px-8 bg-gray-50 dark:bg-gray-900 transition-colors duration-300"
+      className="py-6 lg:py-10 px-4 sm:px-6 lg:px-8 bg-gray-50 dark:bg-gray-900 transition-colors duration-300"
       aria-label="Frequently Asked Questions"
     >
       <div className="max-w-4xl mx-auto">
@@ -93,7 +93,7 @@ export default function FAQ() {
                 layout
               >
                 <button
-                  className="w-full flex justify-between items-center text-left p-6 lg:p-8 font-semibold text-gray-900 dark:text-gray-100 hover:text-violet-600 dark:hover:text-violet-400 transition-colors duration-200"
+                  className="w-full cursor-pointer flex justify-between items-center text-left p-6 lg:p-8 font-semibold text-gray-900 dark:text-gray-100 hover:text-violet-600 dark:hover:text-violet-400 transition-colors duration-200"
                   onClick={() => toggleItem(index)}
                   aria-expanded={isOpen}
                 >
