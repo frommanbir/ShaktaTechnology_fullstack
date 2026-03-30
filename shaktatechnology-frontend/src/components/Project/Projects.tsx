@@ -143,12 +143,11 @@ export default function Projects() {
                   </h4>
                   <div className="flex flex-wrap gap-2">
                     {project.technologies.map((tech, idx) => (
-                      <span
+                      <div
                         key={idx}
-                        className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xs px-2 py-1 rounded-md"
-                      >
-                        {tech}
-                      </span>
+                        className="text-gray-700 dark:text-gray-200 text-xs rich-text-content"
+                        dangerouslySetInnerHTML={{ __html: tech }}
+                      />
                     ))}
                   </div>
                 </div>
@@ -157,11 +156,11 @@ export default function Projects() {
                   <h4 className="font-medium text-sm text-gray-800 dark:text-gray-100 mb-1">
                     Key Results:
                   </h4>
-                  <ul className="list-disc list-inside text-gray-600 dark:text-gray-300 text-sm space-y-1">
+                  <div className="text-gray-600 dark:text-gray-300 text-sm rich-text-content">
                     {project.key_results.map((result, idx) => (
-                      <li key={idx}>{result}</li>
+                      <div key={idx} dangerouslySetInnerHTML={{ __html: result }} />
                     ))}
-                  </ul>
+                  </div>
                 </div>
               </motion.div>
             ))}

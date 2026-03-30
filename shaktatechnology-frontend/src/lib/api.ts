@@ -425,13 +425,13 @@ export const getNews = async (page: number = 1, limit: number = 10) => {
     return [];
   }
 };
-export const getNewsItem = async (id: number) => {
+export const getNewsItem = async (idOrSlug: string | number) => {
   try {
-    const response = await api.get(`news/${id}`);
+    const response = await api.get(`news/${idOrSlug}`);
     // Always return the data object, fallback to null
     return response.data?.data || null;
   } catch (error) {
-    console.error(`Failed to fetch news item ${id}:`, error);
+    console.error(`Failed to fetch news item ${idOrSlug}:`, error);
     return null;
   }
 };

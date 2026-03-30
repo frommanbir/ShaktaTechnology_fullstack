@@ -7,6 +7,7 @@ import Link from "next/link";
 interface NewsCardProps {
   news: {
     id: number;
+    slug?: string;
     title: string;
     description?: string;
     category?: string;
@@ -19,7 +20,26 @@ interface NewsCardProps {
   featured?: boolean;
 }
 
+const stripHtml = (html: string) => {
+  if (!html) return "";
+  // First, replace common block tags with spaces to avoid merging words
+  const withSpaces = html.replace(/<\/p>|<\/div>|<br\s*\/?>/gi, " ");
+  // Then strip all tags
+  const stripped = withSpaces.replace(/<[^>]*>?/gm, "");
+  // Decode common HTML entities (if any)
+  return stripped
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .trim();
+};
+
 export default function NewsCard({ news, featured = false }: NewsCardProps) {
+  const plainDescription = stripHtml(news.description || "");
+
   return (
     <div
       className={`overflow-hidden rounded-2xl shadow-sm bg-white dark:bg-gray-800 hover:shadow-md hover:-translate-y-1 transition-all duration-300 ${
@@ -89,19 +109,20 @@ export default function NewsCard({ news, featured = false }: NewsCardProps) {
         </h3>
 
         {/* Description */}
-        {news.description && (
-          <div
+        {plainDescription && (
+          <p
             className={`mt-2 ${
               featured ? "text-sm md:text-base line-clamp-3" : "text-sm line-clamp-2"
-            } text-gray-600 dark:text-gray-300 rich-text-content`}
-            dangerouslySetInnerHTML={{ __html: news.description }}
-          />
+            } text-gray-600 dark:text-gray-300`}
+          >
+            {plainDescription}
+          </p>
         )}
 
         {/* Read More Button */}
         <div className="mt-5">
           <Link
-            href={`/news/${news.id}`}
+            href={`/news/${news.slug || news.id}`}
             className="inline-flex items-center gap-1 text-purple-600 dark:text-purple-400 font-medium text-sm hover:gap-2 transition-all"
           >
             Read More →

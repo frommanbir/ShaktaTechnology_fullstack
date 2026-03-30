@@ -117,10 +117,12 @@ class NewsController extends Controller
     /**
      * Show single news.
      */
-    public function show($id): JsonResponse
+    public function show($identifier): JsonResponse
     {
         try {
-            $news = News::findOrFail($id);
+            $news = News::where('id', $identifier)
+                        ->orWhere('slug', $identifier)
+                        ->firstOrFail();
             $news->image = $this->formatImageUrl($news->image);
 
             return response()->json([

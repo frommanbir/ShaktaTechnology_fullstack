@@ -11,8 +11,8 @@ interface Project {
   id: number;
   title: string;
   description: string;
-  technologies?: string;
-  key_results?: string;
+  technologies?: string | string[];
+  key_results?: string | string[];
   image?: string;
   created_at?: string;
 }
@@ -28,14 +28,15 @@ export default function ViewProjectPage() {
     async function fetchProject() {
       try {
         const id = Number(params.id);
-        const response = await getProject(id);
-        if (response.success) {
-          setProject(response.data);
+        const data = await getProject(id);
+        if (data) {
+          setProject(data);
         } else {
-          setError("Failed to fetch project details.");
+          setError("Project details not found.");
         }
       } catch (err) {
-        setError("Error loading project.");
+        console.error("Error fetching project:", err);
+        setError("Error loading project details. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -96,7 +97,11 @@ export default function ViewProjectPage() {
            <div className="relative aspect-[4/3] rounded-[2.5rem] overflow-hidden border border-gray-100 dark:border-gray-700 shadow-2xl bg-white dark:bg-gray-900 group">
               {project.image ? (
                 <Image 
-                  src={project.image.startsWith("http") ? project.image : `/${project.image}`} 
+                  src={
+                    project.image.startsWith("http") 
+                    ? project.image 
+                    : (process.env.NEXT_PUBLIC_STORAGE_URL  ? `${process.env.NEXT_PUBLIC_STORAGE_URL}projects/${project.image}` : `/${project.image}`)
+                  } 
                   alt={project.title} 
                   fill 
                   className="object-cover group-hover:scale-105 transition-transform duration-1000" 
@@ -118,7 +123,11 @@ export default function ViewProjectPage() {
               </h3>
               <div 
                 className="prose prose-sm dark:prose-invert text-gray-600 dark:text-gray-400 font-mono text-xs leading-relaxed" 
-                dangerouslySetInnerHTML={{ __html: project.technologies || '<em>No specific technologies listed.</em>' }} 
+                dangerouslySetInnerHTML={{ 
+                  __html: Array.isArray(project.technologies) 
+                          ? project.technologies.join(", ") 
+                          : project.technologies || '<em>No specific technologies listed.</em>' 
+                }} 
               />
            </div>
 
@@ -156,7 +165,11 @@ export default function ViewProjectPage() {
               </h2>
               <div 
                 className="prose prose-md dark:prose-invert max-w-none text-gray-600 dark:text-gray-400 leading-relaxed italic" 
-                dangerouslySetInnerHTML={{ __html: project.key_results || '<em>Data-driven results pending.</em>' }} 
+                dangerouslySetInnerHTML={{ 
+                  __html: Array.isArray(project.key_results) 
+                          ? project.key_results.join("<br />") 
+                          : project.key_results || '<em>Data-driven results pending.</em>' 
+                }} 
               />
            </div>
         </div>

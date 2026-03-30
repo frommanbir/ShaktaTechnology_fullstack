@@ -2,10 +2,11 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import { Calendar, Clock, User, ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { getNews } from "@/lib/api";
+import { getNews, getNewsItem } from "@/lib/api";
 
 interface News {
   id: number;
+  slug?: string;
   title: string;
   description?: string;
   category?: string;
@@ -18,13 +19,12 @@ interface News {
 
 interface NewsDetailPageProps {
   params: {
-    id: string;
+    slug: string;
   };
 }
 
 export async function generateMetadata({ params }: NewsDetailPageProps) {
-  const newsList: News[] = await getNews();
-  const news = newsList.find((item: News) => item.id === parseInt(params.id));
+  const news = await getNewsItem(params.slug);
 
   if (!news) {
     return { title: "News Not Found" };
@@ -37,10 +37,9 @@ export async function generateMetadata({ params }: NewsDetailPageProps) {
 }
 
 export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
-  const newsList: News[] = await getNews();
-  const news = newsList.find((item: News) => item.id === parseInt(params.id));
+  const news = await getNewsItem(params.slug);
 
-  if (!news) notFound();
+  if (!news || !news.id) notFound();
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
@@ -128,15 +127,11 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
 
           <div className="prose prose-lg max-w-none dark:prose-invert">
             <div className="text-gray-700 dark:text-gray-200 leading-relaxed space-y-6">
-              <p>
-                This is placeholder content. In a real application, you would
-                fetch the full article content from your API.
-              </p>
-              {news.description && (
-                <div 
-                  className="text-gray-600 dark:text-gray-400 italic rich-text-content"
-                  dangerouslySetInnerHTML={{ __html: news.description }}
-                />
+              {/* If no other content is available, show the description or some related text */}
+              {!news.description && (
+                <p>
+                  No further details available for this news article.
+                </p>
               )}
             </div>
           </div>
@@ -175,6 +170,8 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
 
 // Static params for SSG
 export async function generateStaticParams() {
-  const newsList: News[] = await getNews();
-  return newsList.map((news: News) => ({ id: news.id.toString() }));
+  const newsList = await getNews();
+  return newsList.map((news: any) => ({
+    slug: news.slug || news.id.toString(),
+  }));
 }

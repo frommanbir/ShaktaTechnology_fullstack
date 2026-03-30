@@ -11,6 +11,7 @@ class News extends Model
 
     protected $fillable = [
         'title',
+        'slug',
         'description',
         'category',
         'author',
@@ -24,4 +25,21 @@ class News extends Model
         'featured' => 'boolean',
         'date' => 'date',
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($news) {
+            if (empty($news->slug)) {
+                $news->slug = \Illuminate\Support\Str::slug($news->title);
+            }
+        });
+
+        static::updating(function ($news) {
+            if ($news->isDirty('title') && empty($news->slug)) {
+                $news->slug = \Illuminate\Support\Str::slug($news->title);
+            }
+        });
+    }
 }

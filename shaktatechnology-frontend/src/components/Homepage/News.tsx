@@ -8,6 +8,20 @@ import { Loader2 } from "lucide-react";
 import { News } from "@/components/types/news";
 import { motion, useReducedMotion, easeOut } from "framer-motion";
 
+const stripHtml = (html: string) => {
+  if (!html) return "";
+  const withSpaces = html.replace(/<\/p>|<\/div>|<br\s*\/?>/gi, " ");
+  return withSpaces
+    .replace(/<[^>]*>?/gm, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .trim();
+};
+
 export default function HomeNews() {
   const [news, setNews] = useState<News[]>([]);
   const [loading, setLoading] = useState(true);
@@ -183,12 +197,12 @@ export default function HomeNews() {
               </div>
 
               <p className="text-gray-600 dark:text-gray-300 mt-3 text-sm sm:text-base line-clamp-3">
-                {item.description || "No description available."}
+                {stripHtml(item.description || "No description available.")}
               </p>
 
               <div className="mt-5">
                 <Link
-                  href={`/news/${item.id}`}
+                  href={`/news/${item.slug || item.id}`}
                   className="text-violet-600 dark:text-violet-400 font-medium text-sm hover:underline inline-flex items-center gap-1"
                 >
                   Read More
