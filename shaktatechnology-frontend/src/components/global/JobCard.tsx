@@ -15,8 +15,8 @@ interface Career {
 
 const JobCard: React.FC<{ career: Career }> = ({ career }) => {
   return (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow duration-300">
-      <div className="flex items-start justify-between gap-6">
+    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 sm:p-6 shadow-sm hover:shadow-md transition-shadow duration-300">
+      <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
         {/* Left: Job Info */}
         <div className="flex-1">
           {/* Department Tag */}
@@ -81,10 +81,10 @@ const JobCard: React.FC<{ career: Career }> = ({ career }) => {
         </div>
 
         {/* Right: Apply Button */}
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 w-full md:w-auto">
           <a
-            href={`mailto:info@shaktatechnology.com?subject=Application for ${encodeURIComponent(career.title)}&body=Dear Hiring Team,%0D%0A%0D%0AI am interested in applying for the ${encodeURIComponent(career.title)} position.%0D%0A%0D%0A[Your message here]%0D%0A%0D%0ARegards,%0D%0A[Your Name]`}
-            className="px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-full text-sm font-medium hover:opacity-90 transition inline-block"
+            href={`mailto:info@shaktatechnology.com?...`}
+            className="w-full md:w-auto text-center px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-full text-sm font-medium hover:opacity-90 transition inline-block"
           >
             Apply Now
           </a>
