@@ -49,7 +49,8 @@ class SettingController extends Controller
                 'facebook' => 'nullable|url|max:255',
                 'twitter' => 'nullable|url|max:255',
                 'about' => 'nullable|string',
-                'visits' => 'sometimes|integer|min:0' // Allow initial visits
+                'visits' => 'sometimes|integer|min:0', // Allow initial visits
+                'whatsapp' => 'nullable|string|max:20',
             ]);
 
             if ($validator->fails()) {
@@ -114,7 +115,8 @@ class SettingController extends Controller
                 'facebook' => 'sometimes|nullable|url|max:255',
                 'twitter' => 'sometimes|nullable|url|max:255',
                 'about' => 'sometimes|nullable|string',
-                'visits' => 'sometimes|integer|min:0' // Allow updating visits
+                'visits' => 'sometimes|integer|min:0', // Allow updating visits
+                'whatsapp' => 'sometimes|nullable|string|max:20'
             ]);
 
             if ($validator->fails()) {

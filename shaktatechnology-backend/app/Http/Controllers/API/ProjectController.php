@@ -38,7 +38,8 @@ class ProjectController extends Controller
             'technologies.*' => 'string|max:50',
             'key_results' => 'nullable|array',
             'key_results.*' => 'string|max:255',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048'
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'url' => 'nullable|url|max:255',
         ]);
 
         if ($validator->fails()) {
@@ -114,7 +115,8 @@ class ProjectController extends Controller
             'technologies.*' => 'string|max:50',
             'key_results' => 'sometimes|array',
             'key_results.*' => 'string|max:255',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048'
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'url' => 'nullable|url|max:255',
         ]);
 
         if ($validator->fails()) {

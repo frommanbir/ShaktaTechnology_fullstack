@@ -18,6 +18,7 @@ class Project extends Model
         'technologies',
         'key_results',
         'image',
+        'url',
     ];
 
     protected $casts = [

@@ -20,6 +20,7 @@ class Setting extends Model
         'facebook',
         'twitter',
         'about',
-        'visits'
+        'visits',
+        'whatsapp'
      ];
 }
