@@ -117,6 +117,7 @@ class ProjectController extends Controller
             'key_results.*' => 'string|max:255',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'url' => 'nullable|url|max:255',
+            
         ]);
 
         if ($validator->fails()) {
