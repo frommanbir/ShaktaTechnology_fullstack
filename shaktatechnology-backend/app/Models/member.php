@@ -26,6 +26,11 @@ class Member extends Model
         'github',
         'address',
         'education',
-        'member_order'
+        'member_order',
+        'is_active'
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
     ];
 }

@@ -93,8 +93,7 @@ class SettingController extends Controller
     public function update(Request $request, $id)
     {
         try {
-            $settings = Setting::find(3);
-            // dd($settings);
+            $settings = Setting::find($id);
 
             if (!$settings) {
                 return response()->json([
@@ -128,20 +127,11 @@ class SettingController extends Controller
             $hasChanges = false;
 
             if ($request->hasFile('logo')) {
-                // if ($settings->logo && Storage::exists($settings->logo)) {
-                //     Storage::delete($settings->logo);
-                // }
-                // $companyName = $request->input('company_name', $settings->company_name);
-                // $file = $request->file('logo');
-                // $extension = $file->getClientOriginalExtension();
-
-                // $fileName = Str::slug($companyName) . '_logo.' . $extension;
-                // $logoPath = $file->storeAs('logos', $fileName, 'public');
-                // $data['logo'] = $logoPath;
-                // $hasChanges = true;
-
-                $data['logo'] = CloudinaryHelper::uploadImage($request->file('logo'), 'settings');
-
+                if ($settings->logo && str_starts_with($settings->logo, 'http')) {
+                    CloudinaryHelper::deleteImage($settings->logo);
+                }
+                $settings->logo = CloudinaryHelper::uploadImage($request->file('logo'), 'settings');
+                $hasChanges = true;
             }
 
             foreach ($data as $key => $value) {

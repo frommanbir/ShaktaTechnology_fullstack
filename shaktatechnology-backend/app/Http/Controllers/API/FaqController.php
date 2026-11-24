@@ -117,7 +117,7 @@ class FaqController extends Controller
             }
 
             $validator = Validator::make($request->all(), [
-                'question' => 'sometimes|required|string|max:255|unique:faqs,question',
+                'question' => 'sometimes|required|string|max:255|unique:faqs,question,' . $id,
                 'answer' => 'sometimes|required|string'
             ]);
 

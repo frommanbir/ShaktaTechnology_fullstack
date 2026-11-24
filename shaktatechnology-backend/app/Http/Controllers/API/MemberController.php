@@ -12,6 +12,18 @@ use Illuminate\Support\Str;
 
 class MemberController extends Controller
 {
+    private function normalizeIsActive(array $input): array
+    {
+        if (array_key_exists('is_active', $input) && is_string($input['is_active'])) {
+            $parsed = filter_var($input['is_active'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            if ($parsed !== null) {
+                $input['is_active'] = $parsed;
+            }
+        }
+
+        return $input;
+    }
+
     // INDEX (Pagination)
     public function index(Request $request): JsonResponse
     {
@@ -20,6 +32,10 @@ class MemberController extends Controller
             $limit = min(100, max(1, (int) $request->input("limit", 10)));
 
             $query = Member::orderBy('member_order', 'asc');
+
+            if ($request->has('active_only') && filter_var($request->input('active_only'), FILTER_VALIDATE_BOOLEAN)) {
+                $query->where('is_active', true);
+            }
 
             $total = $query->count();
 
@@ -57,7 +73,9 @@ class MemberController extends Controller
     public function store(Request $request): JsonResponse
     {
         try {
-            $validator = Validator::make($request->all(), [
+            $input = $this->normalizeIsActive($request->all());
+
+            $validator = Validator::make($input, [
                 'name' => 'required|string|max:255',
                 'email' => 'required|string|email|max:255|unique:members',
                 'phone' => 'nullable|string|max:20',
@@ -75,6 +93,7 @@ class MemberController extends Controller
                 'address' => 'nullable|string|max:255',
                 'education' => 'nullable|string',
                 'member_order' => 'nullable|integer|unique:members,member_order',
+                'is_active' => 'sometimes|boolean',
             ]);
 
             if ($validator->fails()) {
@@ -85,7 +104,8 @@ class MemberController extends Controller
                 ], 422);
             }
 
-            $data = $request->all();
+            $data = $input;
+            $data['is_active'] = array_key_exists('is_active', $input) ? (bool) $input['is_active'] : true;
 
             // Upload to Cloudinary
             if ($request->hasFile('image')) {
@@ -147,7 +167,9 @@ class MemberController extends Controller
                 ], 404);
             }
 
-            $validator = Validator::make($request->all(), [
+            $input = $this->normalizeIsActive($request->all());
+
+            $validator = Validator::make($input, [
                 'name' => 'sometimes|required|string|max:255',
                 'email' => 'sometimes|required|string|email|max:255|unique:members,email,' . $id,
                 'phone' => 'nullable|string|max:20',
@@ -165,6 +187,7 @@ class MemberController extends Controller
                 'address' => 'nullable|string|max:255',
                 'education' => 'nullable|string',
                 'member_order' => 'nullable|integer|unique:members,member_order,' . $id,
+                'is_active' => 'sometimes|boolean',
             ]);
 
             if ($validator->fails()) {
@@ -175,7 +198,10 @@ class MemberController extends Controller
                 ], 422);
             }
 
-            $data = $request->all();
+            $data = $input;
+            if (array_key_exists('is_active', $data)) {
+                $data['is_active'] = (bool) $data['is_active'];
+            }
 
             // 🔥 Replace image in Cloudinary
             if ($request->hasFile('image')) {
@@ -204,6 +230,35 @@ class MemberController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update member',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // TOGGLE MEMBER ACTIVE STATUS
+    public function toggleStatus($id): JsonResponse
+    {
+        $member = Member::find($id);
+        if (!$member) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Member not found'
+            ], 404);
+        }
+
+        try {
+            $member->is_active = !$member->is_active;
+            $member->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Member status updated',
+                'data' => $member
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update member status',
                 'error' => $e->getMessage()
             ], 500);
         }

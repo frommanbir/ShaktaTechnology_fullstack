@@ -65,6 +65,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('services', ServiceController::class)->except(['index', 'show']);
     Route::apiResource('projects', ProjectController::class)->except(['index', 'show']);
     Route::apiResource('members', MemberController::class)->except(['index', 'show']);
+    Route::patch('/members/{id}/toggle-status', [MemberController::class, 'toggleStatus']);
     Route::apiResource('faqs', FaqController::class)->except(['index', 'show']);
     Route::apiResource('careers', CareerController::class)->except(['index', 'show']);
     Route::patch('/careers/{id}/toggle-status', [CareerController::class, 'toggleStatus']);

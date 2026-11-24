@@ -128,18 +128,15 @@ class ProjectController extends Controller
 
         // Handle image update
         if ($request->hasFile('image')) {
-
-            // Delete old image
-            if ($project->image && Storage::exists('public/projects/' . $project->image)) {
-                Storage::delete('public/projects/' . $project->image);
+            if ($project->image) {
+                if (str_starts_with($project->image, 'http')) {
+                    CloudinaryHelper::deleteImage($project->image);
+                } elseif (Storage::exists('public/projects/' . $project->image)) {
+                    Storage::delete('public/projects/' . $project->image);
+                }
             }
 
-            $image = $request->file('image');
-            $title = $data['title'] ?? $project->title;
-            $imageName = Str::slug($title) . '.' . $image->getClientOriginalExtension();
-            $image->storeAs('public/projects', $imageName);
-
-            $data['image'] = $imageName;
+            $data['image'] = CloudinaryHelper::uploadImage($request->file('image'), 'projects');
         }
 
         $project->update($data);
