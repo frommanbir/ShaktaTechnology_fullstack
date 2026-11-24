@@ -12,6 +12,9 @@ class News extends Model
     protected $fillable = [
         'title',
         'slug',
+        'meta_title',
+        'meta_description',
+        'meta_keywords',
         'description',
         'category',
         'author',
@@ -26,19 +29,37 @@ class News extends Model
         'date' => 'date',
     ];
 
+    public static function generateUniqueSlug(string $source, ?int $ignoreId = null): string
+    {
+        $baseSlug = \Illuminate\Support\Str::slug($source) ?: 'post';
+        $slug = $baseSlug;
+        $counter = 2;
+
+        while (
+            static::where('slug', $slug)
+                ->when($ignoreId !== null, fn ($q) => $q->where('id', '!=', $ignoreId))
+                ->exists()
+        ) {
+            $slug = "{$baseSlug}-{$counter}";
+            $counter++;
+        }
+
+        return $slug;
+    }
+
     protected static function boot()
     {
         parent::boot();
 
         static::creating(function ($news) {
-            if (empty($news->slug)) {
-                $news->slug = \Illuminate\Support\Str::slug($news->title);
-            }
+            $news->slug = static::generateUniqueSlug($news->slug ?: $news->title);
         });
 
         static::updating(function ($news) {
-            if ($news->isDirty('title') && empty($news->slug)) {
-                $news->slug = \Illuminate\Support\Str::slug($news->title);
+            if ($news->isDirty('slug') && !empty($news->slug)) {
+                $news->slug = static::generateUniqueSlug($news->slug, $news->id);
+            } elseif (empty($news->slug)) {
+                $news->slug = static::generateUniqueSlug($news->title, $news->id);
             }
         });
     }

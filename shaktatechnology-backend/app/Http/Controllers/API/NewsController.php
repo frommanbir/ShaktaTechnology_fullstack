@@ -70,14 +70,18 @@ class NewsController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'title'       => 'required|string|max:255',
-            'description' => 'required|string',
-            'category'    => 'nullable|string|max:100',
-            'author'      => 'nullable|string|max:100',
-            'read_time'   => 'nullable|string|max:50',
-            'featured'    => 'boolean',
-            'date'        => 'nullable|date',
-            'image'       => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'title'            => 'required|string|max:255',
+            'slug'             => 'nullable|string|max:255',
+            'meta_title'       => 'nullable|string|max:255',
+            'meta_description' => 'nullable|string|max:500',
+            'meta_keywords'    => 'nullable|string|max:255',
+            'description'      => 'required|string',
+            'category'         => 'nullable|string|max:100',
+            'author'           => 'nullable|string|max:100',
+            'read_time'        => 'nullable|string|max:50',
+            'featured'         => 'boolean',
+            'date'             => 'nullable|date',
+            'image'            => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
         if ($validator->fails()) {
@@ -120,9 +124,13 @@ class NewsController extends Controller
     public function show($identifier): JsonResponse
     {
         try {
-            $news = News::where('id', $identifier)
-                        ->orWhere('slug', $identifier)
-                        ->firstOrFail();
+            if (ctype_digit((string) $identifier)) {
+                $news = News::where('id', (int) $identifier)
+                            ->orWhere('slug', $identifier)
+                            ->firstOrFail();
+            } else {
+                $news = News::where('slug', $identifier)->firstOrFail();
+            }
             $news->image = $this->formatImageUrl($news->image);
 
             return response()->json([
@@ -145,14 +153,18 @@ class NewsController extends Controller
     public function update(Request $request, $id): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'title'       => 'sometimes|required|string|max:255',
-            'description' => 'sometimes|required|string',
-            'category'    => 'nullable|string|max:100',
-            'author'      => 'nullable|string|max:100',
-            'read_time'   => 'nullable|string|max:50',
-            'featured'    => 'boolean',
-            'date'        => 'nullable|date',
-            'image'       => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'title'            => 'sometimes|required|string|max:255',
+            'slug'             => 'nullable|string|max:255',
+            'meta_title'       => 'nullable|string|max:255',
+            'meta_description' => 'nullable|string|max:500',
+            'meta_keywords'    => 'nullable|string|max:255',
+            'description'      => 'sometimes|required|string',
+            'category'         => 'nullable|string|max:100',
+            'author'           => 'nullable|string|max:100',
+            'read_time'        => 'nullable|string|max:50',
+            'featured'         => 'boolean',
+            'date'             => 'nullable|date',
+            'image'            => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
         if ($validator->fails()) {

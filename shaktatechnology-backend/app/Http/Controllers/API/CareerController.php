@@ -46,7 +46,8 @@ class CareerController extends Controller
         $validTypes = CareerType::pluck('name')->toArray();
 
         $validator = Validator::make($request->all(), [
-            'title'        => 'required|string|max:255|unique:careers,title',
+            'title'        => 'required|string|max:255',
+            'slug'         => 'nullable|string|max:255',
             'department'   => 'nullable|string|max:255',
             'location'     => 'nullable|string|max:255',
             'type'         => 'required|string|in:' . implode(',', $validTypes),
@@ -83,9 +84,16 @@ class CareerController extends Controller
     /**
      * Get a specific career.
      */
-    public function show(int $id): JsonResponse
+    public function show($identifier): JsonResponse
     {
-        $career = Career::find($id);
+        if (ctype_digit((string) $identifier)) {
+            $career = Career::where('id', (int) $identifier)
+                ->orWhere('slug', $identifier)
+                ->first();
+        } else {
+            $career = Career::where('slug', $identifier)->first();
+        }
+
         if (!$career) {
             return response()->json([
                 'success' => false,
@@ -115,7 +123,8 @@ class CareerController extends Controller
         $validTypes = CareerType::pluck('name')->toArray();
 
         $validator = Validator::make($request->all(), [
-            'title'        => 'sometimes|required|string|max:255|unique:careers,title,' . $id,
+            'title'        => 'sometimes|required|string|max:255',
+            'slug'         => 'nullable|string|max:255',
             'department'   => 'nullable|string|max:255',
             'location'     => 'nullable|string|max:255',
             'type'         => 'sometimes|required|string|in:' . implode(',', $validTypes),
