@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Helpers\CloudinaryHelper;
 use App\Http\Controllers\Controller;
 use App\Models\Career;
 use App\Models\CareerType;
@@ -11,6 +12,22 @@ use Illuminate\Support\Facades\Validator;
 
 class CareerController extends Controller
 {
+    /**
+     * Format image URL for local storage or Cloudinary absolute URLs.
+     */
+    private function formatImageUrl(?string $path): ?string
+    {
+        if (!$path) {
+            return null;
+        }
+
+        if (str_starts_with($path, 'http')) {
+            return $path;
+        }
+
+        return asset('storage/' . ltrim($path, '/'));
+    }
+
     /**
      * List all careers.
      */
@@ -25,6 +42,11 @@ class CareerController extends Controller
                     'data' => []
                 ], 200);
             }
+
+            foreach ($careers as $career) {
+                $career->image = $this->formatImageUrl($career->image);
+            }
+
             return response()->json([
                 'success' => true,
                 'data' => $careers
@@ -54,6 +76,7 @@ class CareerController extends Controller
             'description'  => 'required|string',
             'requirements' => 'required|string',
             'benefits'     => 'nullable|string',
+            'image'        => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'is_active'    => 'boolean',
         ]);
 
@@ -66,7 +89,16 @@ class CareerController extends Controller
         }
 
         try {
-            $career = Career::create($validator->validated());
+            $data = $validator->validated();
+            unset($data['image']);
+
+            if ($request->hasFile('image')) {
+                $data['image'] = CloudinaryHelper::uploadImage($request->file('image'), 'careers');
+            }
+
+            $career = Career::create($data);
+            $career->image = $this->formatImageUrl($career->image);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Career created successfully',
@@ -101,6 +133,8 @@ class CareerController extends Controller
             ], 404);
         }
 
+        $career->image = $this->formatImageUrl($career->image);
+
         return response()->json([
             'success' => true,
             'data'    => $career
@@ -131,6 +165,7 @@ class CareerController extends Controller
             'description'  => 'sometimes|required|string',
             'requirements' => 'sometimes|required|string',
             'benefits'     => 'nullable|string',
+            'image'        => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'is_active'    => 'sometimes|boolean',
         ]);
 
@@ -142,17 +177,30 @@ class CareerController extends Controller
             ], 422);
         }
 
-        $career->fill($validator->validated());
-
-        if (!$career->isDirty()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No changes detected'
-            ], 400);
-        }
+        $data = $validator->validated();
+        unset($data['image']);
 
         try {
+            if ($request->hasFile('image')) {
+                if ($career->image) {
+                    CloudinaryHelper::deleteImage($career->image);
+                }
+
+                $data['image'] = CloudinaryHelper::uploadImage($request->file('image'), 'careers');
+            }
+
+            $career->fill($data);
+
+            if (!$career->isDirty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No changes detected'
+                ], 400);
+            }
+
             $career->save();
+            $career->image = $this->formatImageUrl($career->image);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Career updated successfully',
@@ -211,6 +259,10 @@ class CareerController extends Controller
         }
 
         try {
+            if ($career->image) {
+                CloudinaryHelper::deleteImage($career->image);
+            }
+
             $career->delete();
             return response()->json([
                 'success' => true,

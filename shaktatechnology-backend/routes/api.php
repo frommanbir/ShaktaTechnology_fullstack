@@ -18,7 +18,6 @@ use Illuminate\Support\Facades\Route;
 
 // Authentication routes
 Route::post('/login', [AuthController::class, 'login']);
-Route::post('/register', [AuthController::class, 'register']);
 
 // Public routes (no authentication required)
 Route::post('/track-visit', [VisitController::class, 'track']);
@@ -41,8 +40,8 @@ Route::get('/careers/{id}', [CareerController::class, 'show']);
 // Career types are public (needed by the frontend form)
 Route::get('/career-types', [CareerTypeController::class, 'index']);
 
-Route::get('/contacts', [ContactController::class, 'index']);
-Route::get('/contacts/{id}', [ContactController::class, 'show']);
+// Public contact form submission only
+Route::post('/contacts', [ContactController::class, 'store']);
 
 Route::get('/settings', [SettingController::class, 'index']);
 Route::get('/settings/{id}', [SettingController::class, 'show']);
@@ -58,7 +57,8 @@ Route::get('/testimonials/{id}', [TestimonialController::class, 'show']);
 
 // Routes protected by Sanctum
 Route::middleware('auth:sanctum')->group(function () {
-    // Logout
+    // Admin registration & logout
+    Route::post('/register', [AuthController::class, 'register']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
     // Protected CRUD operations
@@ -70,7 +70,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('careers', CareerController::class)->except(['index', 'show']);
     Route::patch('/careers/{id}/toggle-status', [CareerController::class, 'toggleStatus']);
     Route::apiResource('career-types', CareerTypeController::class)->except(['index', 'show']);
-    Route::apiResource('contacts', ContactController::class)->except(['index', 'show']);
+    Route::apiResource('contacts', ContactController::class)->except(['store']);
     Route::apiResource('settings', SettingController::class)->except(['index', 'show']);
     Route::apiResource('galleries', GalleryController::class)->except(['index', 'show']);
     Route::apiResource('news', NewsController::class)->except(['index', 'show']);

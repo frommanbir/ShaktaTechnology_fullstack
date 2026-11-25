@@ -17,6 +17,7 @@ class Career extends Model
         'description',
         'requirements',
         'benefits',
+        'image',
         'is_active',
     ];
 

@@ -23,7 +23,9 @@ return [
     'allowed_origins' => ['http://localhost:5500',
                           'http://127.0.0.1:3000',
                           'http://localhost:3000',
-                          'https://portfolio.shaktatechnology.com/'
+                          'https://portfolio.shaktatechnology.com',
+                          'https://shaktatechnology.com',
+                          'https://www.shaktatechnology.com'
                           ],
 
     'allowed_origins_patterns' => [],
